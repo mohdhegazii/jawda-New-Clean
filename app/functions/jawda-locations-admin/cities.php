@@ -78,14 +78,14 @@ class Jawda_Cities_List_Table extends WP_List_Table {
         }
     }
     public function column_cb($item) {
-        return sprintf('<input type="checkbox" name="id[]" value="%s" />', $item->id);
+        return sprintf('<input type="checkbox" name="id[]" value="%s" />', $item['id']);
     }
     function column_name_ar($item) {
         $actions = array(
-            'edit'      => sprintf('<a href="?page=%s&action=%s&id=%s">Edit</a>', $_REQUEST['page'], 'edit', $item->id),
-            'delete'    => sprintf('<a href="?page=%s&action=%s&id=%s">Delete</a>', $_REQUEST['page'], 'delete', $item->id),
+            'edit'      => sprintf('<a href="?page=%s&action=%s&id=%s">Edit</a>', $_REQUEST['page'], 'edit', $item['id']),
+            'delete'    => sprintf('<a href="?page=%s&action=%s&id=%s">Delete</a>', $_REQUEST['page'], 'delete', $item['id']),
         );
-      return sprintf('%1$s %2$s', $item->name_ar, $this->row_actions($actions) );
+      return sprintf('%1$s %2$s', $item['name_ar'], $this->row_actions($actions) );
     }
 
     protected function get_bulk_actions() {
@@ -171,14 +171,14 @@ class Jawda_Cities_List_Table extends WP_List_Table {
             <h3>Edit City</h3>
             <form method="post">
                 <input type="hidden" name="action" value="edit_city">
-                <input type="hidden" name="id" value="<?php echo $item->id; ?>">
+                <input type="hidden" name="id" value="<?php echo $item['id']; ?>">
                 <div class="form-field">
                     <label for="name_ar">Name (Arabic)</label>
-                    <input type="text" name="name_ar" id="name_ar" value="<?php echo esc_attr($item->name_ar); ?>" required>
+                    <input type="text" name="name_ar" id="name_ar" value="<?php echo esc_attr($item['name_ar']); ?>" required>
                 </div>
                 <div class="form-field">
                     <label for="name_en">Name (English)</label>
-                    <input type="text" name="name_en" id="name_en" value="<?php echo esc_attr($item->name_en); ?>" required>
+                    <input type="text" name="name_en" id="name_en" value="<?php echo esc_attr($item['name_en']); ?>" required>
                 </div>
                 <div class="form-field">
                     <label for="governorate_id">Governorate</label>
@@ -237,6 +237,7 @@ class Jawda_Cities_List_Table extends WP_List_Table {
             'governorate_id'=> $governorate_id,
             'latitude'      => $latitude,
             'longitude'     => $longitude,
+            'created_at'    => current_time('mysql'),
         ]);
 
         wp_cache_delete('jawda_cities_gov_' . $governorate_id, 'jawda_locations');
