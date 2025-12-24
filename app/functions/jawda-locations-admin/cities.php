@@ -140,6 +140,7 @@ class Jawda_Cities_List_Table extends WP_List_Table {
                 <option value="<?php echo $row->id; ?>" 
                         data-lat="<?php echo esc_attr($row->latitude); ?>" 
                         data-lng="<?php echo esc_attr($row->longitude); ?>" 
+                        data-polygon="<?php echo esc_attr(isset($row->polygon) ? $row->polygon : ''); ?>"
                         <?php echo (isset($item) && $item["governorate_id"] == $row->id) ? "selected" : ""; ?>>
                     <?php echo (is_object($row) ? $row->name_ar : $row["name_ar"]); ?>
                 </option>
@@ -188,6 +189,7 @@ class Jawda_Cities_List_Table extends WP_List_Table {
                 <option value="<?php echo $row->id; ?>" 
                         data-lat="<?php echo esc_attr($row->latitude); ?>" 
                         data-lng="<?php echo esc_attr($row->longitude); ?>" 
+                        data-polygon="<?php echo esc_attr(isset($row->polygon) ? $row->polygon : ''); ?>"
                         <?php echo (isset($item) && $item["governorate_id"] == $row->id) ? "selected" : ""; ?>>
                     <?php echo (is_object($row) ? $row->name_ar : $row["name_ar"]); ?>
                 </option>
@@ -200,6 +202,7 @@ class Jawda_Cities_List_Table extends WP_List_Table {
                     'lat_value' => isset($item['latitude']) ? $item['latitude'] : '',
                     'lng_id'    => 'city_longitude_edit',
                     'lng_value' => isset($item['longitude']) ? $item['longitude'] : '',
+                    'polygon_value' => isset($item['polygon']) ? $item['polygon'] : '',
                     'map_id'    => 'city-map-edit',
                 ]);
                 submit_button('Update City');
@@ -235,6 +238,7 @@ class Jawda_Cities_List_Table extends WP_List_Table {
         $governorate_id = (int)$_POST['governorate_id'];
         $latitude = jawda_locations_normalize_coordinate($_POST['latitude'] ?? null);
         $longitude = jawda_locations_normalize_coordinate($_POST['longitude'] ?? null);
+        $polygon = isset($_POST['polygon_coordinates']) ? wp_unslash($_POST['polygon_coordinates']) : '';
 
         $wpdb->insert($table_name, [
             'name_ar'       => $name_ar,
@@ -244,6 +248,7 @@ class Jawda_Cities_List_Table extends WP_List_Table {
             'governorate_id'=> $governorate_id,
             'latitude'      => $latitude,
             'longitude'     => $longitude,
+            'polygon'       => $polygon,
             'created_at'    => current_time('mysql'),
         ]);
 
@@ -259,6 +264,7 @@ class Jawda_Cities_List_Table extends WP_List_Table {
         $governorate_id = (int)$_POST['governorate_id'];
         $latitude = jawda_locations_normalize_coordinate($_POST['latitude'] ?? null);
         $longitude = jawda_locations_normalize_coordinate($_POST['longitude'] ?? null);
+        $polygon = isset($_POST['polygon_coordinates']) ? wp_unslash($_POST['polygon_coordinates']) : '';
 
         $slug = sanitize_title($name_en);
         $slug_ar = sanitize_title($name_ar);
@@ -272,6 +278,7 @@ class Jawda_Cities_List_Table extends WP_List_Table {
             'governorate_id'=> $governorate_id,
             'latitude'      => $latitude,
             'longitude'     => $longitude,
+            'polygon'       => $polygon,
         ];
         if (!empty($slug)) $data['slug'] = $slug;
         if (!empty($slug_ar)) $data['slug_ar'] = $slug_ar;
