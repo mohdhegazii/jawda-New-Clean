@@ -1,0 +1,498 @@
+<?php
+/**
+ * Admin page for managing the 4-level Hegzz Lookups system and Aliases.
+ */
+
+if (!defined('ABSPATH')) exit;
+
+if (!class_exists('WP_List_Table')) {
+    require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
+}
+
+function hegzz_lookups_enqueue_admin_assets($hook) {
+    if ($hook === 'toplevel_page_hegzz-lookups' || (isset($_GET['page']) && $_GET['page'] === 'hegzz-lookups-types')) {
+        wp_enqueue_style('bootstrap-icons', 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css', [], '1.11.3');
+    }
+}
+add_action('admin_enqueue_scripts', 'hegzz_lookups_enqueue_admin_assets');
+
+// -- LIST TABLE CLASSES --
+class Hegzz_Base_Lookup_List_Table extends WP_List_Table {
+    protected $tab = '';
+
+    function get_bulk_actions() {
+        return [
+            'activate' => __('Activate', 'aqarand'),
+            'deactivate' => __('Deactivate', 'aqarand'),
+            'delete' => __('Delete', 'aqarand'),
+        ];
+    }
+
+    protected function render_status($item) {
+        return !empty($item['is_active']) ? '<span class="status-active">Active</span>' : '<span class="status-inactive">Inactive</span>';
+    }
+
+    function column_cb($item) { return sprintf('<input type="checkbox" name="ids[]" value="%s" />', $item['id']); }
+    function column_icon_class($item) { return !empty($item['icon_class']) ? '<i class="' . esc_attr($item['icon_class']) . '"></i>' : '—'; }
+    function column_sort_order($item) { return isset($item['sort_order']) ? intval($item['sort_order']) : 0; }
+    function column_is_active($item) { return $this->render_status($item); }
+}
+
+class Hegzz_Categories_List_Table extends Hegzz_Base_Lookup_List_Table {
+    protected $tab = 'categories';
+    function __construct() { parent::__construct(['singular' => 'Category', 'plural' => 'Categories', 'ajax' => false]); }
+    function get_columns() { return ['cb' => '<input type="checkbox" />', 'icon_class' => __('Icon', 'aqarand'), 'name_en' => 'Name (EN)', 'name_ar' => 'Name (AR)', 'sort_order' => 'Sort', 'is_active' => 'Status']; }
+    function prepare_items() { $this->_column_headers = [$this->get_columns(), [], []]; $this->items = Hegzz_Lookups_Service::get_all_categories(); }
+    function column_default($item, $column_name) { return isset($item[$column_name]) ? esc_html($item[$column_name]) : ''; }
+    function column_name_en($item) {
+        $actions = [
+            'edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=categories&action=edit&id=%s">Edit</a>', $item['id']),
+            'quick_edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=categories&action=quick-edit&id=%s">Quick Edit</a>', $item['id']),
+            'delete' => sprintf('<a href="?page=hegzz-lookups-types&tab=categories&action=delete&id=%s&_wpnonce=%s">Delete</a>', $item['id'], wp_create_nonce('hegzz_delete_lookup')),
+        ];
+        return sprintf('<strong>%s</strong>%s', esc_html($item['name_en']), $this->row_actions($actions));
+    }
+}
+
+class Hegzz_Usages_List_Table extends Hegzz_Base_Lookup_List_Table {
+    protected $tab = 'usages';
+    function __construct() { parent::__construct(['singular' => 'Usage', 'plural' => 'Usages', 'ajax' => false]); }
+    function get_columns() { return ['cb' => '<input type="checkbox" />', 'icon_class' => __('Icon', 'aqarand'), 'name_en' => 'Name (EN)', 'name_ar' => 'Name (AR)', 'sort_order' => 'Sort', 'is_active' => 'Status']; }
+    function prepare_items() { $this->_column_headers = [$this->get_columns(), [], []]; $this->items = Hegzz_Lookups_Service::get_all_usages(); }
+    function column_default($item, $column_name) { return isset($item[$column_name]) ? esc_html($item[$column_name]) : ''; }
+    function column_name_en($item) {
+        $actions = [
+            'edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=usages&action=edit&id=%s">Edit</a>', $item['id']),
+            'quick_edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=usages&action=quick-edit&id=%s">Quick Edit</a>', $item['id']),
+            'delete' => sprintf('<a href="?page=hegzz-lookups-types&tab=usages&action=delete&id=%s&_wpnonce=%s">Delete</a>', $item['id'], wp_create_nonce('hegzz_delete_lookup')),
+        ];
+        return sprintf('<strong>%s</strong>%s', esc_html($item['name_en']), $this->row_actions($actions));
+    }
+}
+
+class Hegzz_Property_Types_List_Table extends Hegzz_Base_Lookup_List_Table {
+    protected $tab = 'property-types';
+    private $categories_map = [];
+    private $usages_map = [];
+    private $relations_by_type = ['categories' => [], 'usages' => []];
+
+    function __construct() { parent::__construct(['singular' => 'Property Type', 'plural' => 'Property Types', 'ajax' => false]); }
+    function get_columns() { return ['cb' => '<input type="checkbox" />', 'icon_class' => __('Icon', 'aqarand'), 'name_en' => 'Name (EN)', 'name_ar' => 'Name (AR)', 'categories' => 'Categories', 'usages' => 'Usages', 'sort_order' => 'Sort', 'is_active' => 'Status']; }
+
+    function prepare_items() {
+        $this->_column_headers = [$this->get_columns(), [], []];
+        $this->items = Hegzz_Lookups_Service::get_all_property_types();
+
+        $this->categories_map = wp_list_pluck(Hegzz_Lookups_Service::get_all_categories(['is_active' => 1]), 'name_en', 'id');
+        $this->usages_map = wp_list_pluck(Hegzz_Lookups_Service::get_all_usages(['is_active' => 1]), 'name_en', 'id');
+
+        $category_relations = Hegzz_Lookups_Service::get_all_property_type_category_relations();
+        foreach ($category_relations as $rel) {
+            $this->relations_by_type['categories'][$rel->property_type_id][] = $rel->category_id;
+        }
+
+        $usage_relations = Hegzz_Lookups_Service::get_all_property_type_usage_relations();
+        foreach ($usage_relations as $rel) {
+            $this->relations_by_type['usages'][$rel->property_type_id][] = $rel->usage_id;
+        }
+    }
+
+    function column_default($item, $column_name) { return isset($item[$column_name]) ? esc_html($item[$column_name]) : ''; }
+    function column_name_en($item) {
+        $actions = [
+            'edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=property-types&action=edit&id=%s">Edit</a>', $item['id']),
+            'quick_edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=property-types&action=quick-edit&id=%s">Quick Edit</a>', $item['id']),
+            'delete' => sprintf('<a href="?page=hegzz-lookups-types&tab=property-types&action=delete&id=%s&_wpnonce=%s">Delete</a>', $item['id'], wp_create_nonce('hegzz_delete_lookup')),
+        ];
+        return sprintf('<strong>%s</strong>%s', esc_html($item['name_en']), $this->row_actions($actions));
+    }
+
+    function column_categories($item) {
+        $cat_ids = $this->relations_by_type['categories'][$item['id']] ?? [];
+        if (empty($cat_ids)) return '—';
+        $names = array_intersect_key($this->categories_map, array_flip($cat_ids));
+        return implode(', ', array_map('esc_html', $names));
+    }
+
+    function column_usages($item) {
+        $usage_ids = $this->relations_by_type['usages'][$item['id']] ?? [];
+        if (empty($usage_ids)) return '—';
+        $names = array_intersect_key($this->usages_map, array_flip($usage_ids));
+        return implode(', ', array_map('esc_html', $names));
+    }
+}
+
+class Hegzz_Sub_Properties_List_Table extends Hegzz_Base_Lookup_List_Table {
+    protected $tab = 'sub-properties';
+    private $property_types_map = [];
+    function __construct() { parent::__construct(['singular' => 'Sub-Property', 'plural' => 'Sub-Properties', 'ajax' => false]); }
+    function get_columns() { return ['cb' => '<input type="checkbox" />', 'icon_class' => __('Icon', 'aqarand'), 'name_en' => 'Name (EN)', 'name_ar' => 'Name (AR)', 'parent_type' => 'Parent Property Type', 'sort_order' => 'Sort', 'is_active' => 'Status']; }
+    function prepare_items() {
+        $this->_column_headers = [$this->get_columns(), [], []];
+        $this->items = Hegzz_Lookups_Service::get_all_sub_properties();
+        $this->property_types_map = wp_list_pluck(Hegzz_Lookups_Service::get_all_property_types(['is_active' => 1]), 'name_en', 'id');
+    }
+    function column_default($item, $column_name) { return isset($item[$column_name]) ? esc_html($item[$column_name]) : ''; }
+    function column_name_en($item) {
+        $actions = [
+            'edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=sub-properties&action=edit&id=%s">Edit</a>', $item['id']),
+            'quick_edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=sub-properties&action=quick-edit&id=%s">Quick Edit</a>', $item['id']),
+            'delete' => sprintf('<a href="?page=hegzz-lookups-types&tab=sub-properties&action=delete&id=%s&_wpnonce=%s">Delete</a>', $item['id'], wp_create_nonce('hegzz_delete_lookup')),
+        ];
+        return sprintf('<strong>%s</strong>%s', esc_html($item['name_en']), $this->row_actions($actions));
+    }
+    function column_parent_type($item) { return isset($item['property_type_id']) ? esc_html($this->property_types_map[$item['property_type_id']] ?? 'N/A') : 'N/A'; }
+}
+
+class Hegzz_Aliases_List_Table extends WP_List_Table {
+    function __construct() { parent::__construct(['singular' => 'Alias', 'plural' => 'Aliases', 'ajax' => false]); }
+    function get_columns() { return ['cb' => '<input type="checkbox" />', 'name_en' => 'Name (EN)', 'name_ar' => 'Name (AR)', 'sub_property' => 'Sub-Property', 'project' => 'Project']; }
+    function get_bulk_actions() { return ['delete' => __('Delete', 'aqarand')]; }
+    function prepare_items() { $this->_column_headers = [$this->get_columns(), [], []]; $this->items = Hegzz_Lookups_Service::get_all_aliases(['is_deleted' => 0]); }
+    function column_default($item, $column_name) { return esc_html($item[$column_name]); }
+    function column_cb($item) { return sprintf('<input type="checkbox" name="ids[]" value="%s" />', $item['id']); }
+    function column_name_en($item) {
+        $actions = [
+            'edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=aliases&action=edit&id=%s">Edit</a>', $item['id']),
+            'quick_edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=aliases&action=quick-edit&id=%s">Quick Edit</a>', $item['id']),
+            'delete' => sprintf('<a href="?page=hegzz-lookups-types&tab=aliases&action=delete&id=%s&_wpnonce=%s">Delete</a>', $item['id'], wp_create_nonce('hegzz_delete_lookup'))
+        ];
+        return sprintf('<strong>%s</strong>%s', esc_html($item['name_en']), $this->row_actions($actions));
+    }
+    function column_sub_property($item) { $sub = Hegzz_Lookups_Service::get_sub_property($item['sub_property_id']); return $sub ? esc_html($sub['name_en']) : 'N/A'; }
+}
+
+// --- PAGE RENDERING & FORM HANDLING ---
+
+function hegzz_lookups_get_entity_map() {
+    return [
+        'categories' => 'category',
+        'property-types' => 'property_type',
+        'sub-properties' => 'sub_property',
+        'usages' => 'usage',
+        'aliases' => 'alias',
+    ];
+}
+
+function hegzz_lookups_types_categories_page() {
+    $tabs = [
+        'categories' => 'Categories',
+        'property-types' => 'Property Types',
+        'sub-properties' => 'Sub-Properties',
+        'usages' => 'Usages',
+        'aliases' => 'Aliases'
+    ];
+
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && (empty($_GET['tab']) || !isset($tabs[$_GET['tab']]))) {
+        hegzz_lookups_safe_redirect(hegzz_lookups_redirect_url('categories'));
+    }
+
+    $current_tab = hegzz_lookups_get_tab_from_request($tabs);
+    hegzz_lookups_handle_form_actions($current_tab);
+
+    $error = get_transient('hegzz_lookup_error');
+    $success = get_transient('hegzz_lookup_success');
+    if ($error) {
+        echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error) . '</p></div>';
+        delete_transient('hegzz_lookup_error');
+    }
+    if ($success) {
+        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($success) . '</p></div>';
+        delete_transient('hegzz_lookup_success');
+    }
+    ?>
+    <div class="wrap">
+        <h1 class="wp-heading-inline">Types & Categories</h1>
+        <hr class="wp-header-end">
+        <h2 class="nav-tab-wrapper">
+            <?php foreach ($tabs as $key => $name) { echo '<a href="?page=hegzz-lookups-types&tab='.$key.'" class="nav-tab'.($current_tab===$key?' nav-tab-active':'').'">'.$name.'</a>'; } ?>
+        </h2>
+        <div id="col-container" class="wp-clearfix" style="margin-top: 20px;">
+            <div id="col-left"><div class="col-wrap"><?php hegzz_lookups_render_form($current_tab); ?></div></div>
+            <div id="col-right"><div class="col-wrap"><?php hegzz_lookups_render_quick_edit($current_tab); hegzz_lookups_render_list_table($current_tab); ?></div></div>
+        </div>
+    </div>
+    <?php
+}
+
+function hegzz_lookups_get_tab_from_request($tabs) {
+    if (!empty($_REQUEST['tab']) && isset($tabs[$_REQUEST['tab']])) {
+        return sanitize_text_field($_REQUEST['tab']);
+    }
+    return 'categories';
+}
+
+function hegzz_lookups_render_list_table($tab) {
+    $class_key = str_replace('-', '_', $tab);
+    $table_class = 'Hegzz_' . str_replace(' ', '_', ucwords(str_replace('_', ' ', $class_key))) . '_List_Table';
+    if (class_exists($table_class)) {
+        $list_table = new $table_class();
+        $list_table->prepare_items();
+        echo '<form method="post">';
+        wp_nonce_field('hegzz_lookup_bulk_action', 'hegzz_lookup_bulk_nonce');
+        echo '<input type="hidden" name="tab" value="' . esc_attr($tab) . '" />';
+        $list_table->display();
+        echo '</form>';
+    }
+}
+
+function hegzz_lookups_render_form($tab) {
+    $action = isset($_GET['action']) && $_GET['action'] == 'edit' ? 'edit' : 'add';
+    $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+    $entity_map = hegzz_lookups_get_entity_map();
+    $singular_entity = $entity_map[$tab] ?? '';
+    $item = $id > 0 ? call_user_func(['Hegzz_Lookups_Service', 'get_' . $singular_entity], $id) : null;
+    ?>
+    <div class="form-wrap">
+        <h2><?php echo $action === 'edit' ? 'Edit' : 'Add New'; ?></h2>
+        <form method="post" action="?page=hegzz-lookups-types&tab=<?php echo $tab; ?>">
+            <input type="hidden" name="action" value="<?php echo $action === 'edit' ? 'update' : 'add'; ?>">
+            <input type="hidden" name="id" value="<?php echo $id; ?>">
+            <?php wp_nonce_field('hegzz_save_lookup'); ?>
+
+            <div class="form-field"><label for="name_en">Name (EN)</label><input type="text" name="name_en" id="name_en" value="<?php echo esc_attr($item['name_en'] ?? ''); ?>" required></div>
+            <div class="form-field"><label for="name_ar">Name (AR)</label><input type="text" name="name_ar" id="name_ar" value="<?php echo esc_attr($item['name_ar'] ?? ''); ?>" required></div>
+            <div class="form-field"><label for="icon_class">Bootstrap Icon Class</label><input type="text" name="icon_class" id="icon_class" value="<?php echo esc_attr($item['icon_class'] ?? ''); ?>" placeholder="bi bi-house-door"></div>
+            <div class="form-field"><label for="sort_order">Sort Order</label><input type="number" name="sort_order" id="sort_order" value="<?php echo esc_attr($item['sort_order'] ?? 0); ?>" min="0"></div>
+            <div class="form-field"><label><input type="checkbox" name="is_active" value="1" <?php checked($item['is_active'] ?? 1, 1); ?>> <?php _e('Active', 'aqarand'); ?></label></div>
+
+            <?php if ($tab === 'property-types'):
+                $cats = Hegzz_Lookups_Service::get_all_categories(); $usages = Hegzz_Lookups_Service::get_all_usages();
+                $sel_cats = $id > 0 ? Hegzz_Lookups_Service::get_categories_for_property_type($id) : [];
+                $sel_usages = $id > 0 ? Hegzz_Lookups_Service::get_usages_for_property_type($id) : [];
+                echo '<div class="form-field"><label>Categories</label><select name="category_ids[]" multiple style="width:100%;height:100px;">';
+                foreach($cats as $cat) echo '<option value="'.$cat['id'].'" '.selected(in_array($cat['id'], $sel_cats), true, false).'>'.$cat['name_en'].'</option>';
+                echo '</select></div>';
+                echo '<div class="form-field"><label>Usages</label><select name="usage_ids[]" multiple style="width:100%;height:100px;">';
+                foreach($usages as $u) echo '<option value="'.$u['id'].'" '.selected(in_array($u['id'], $sel_usages), true, false).'>'.$u['name_en'].'</option>';
+                echo '</select></div>';
+            endif; ?>
+
+            <?php if ($tab === 'sub-properties'):
+                $types = Hegzz_Lookups_Service::get_all_property_types();
+                echo '<div class="form-field"><label>Parent Property Type</label><select name="property_type_id" required>';
+                foreach($types as $t) echo '<option value="'.$t['id'].'" '.selected($item['property_type_id'] ?? 0, $t['id'], false).'>'.$t['name_en'].'</option>';
+                echo '</select></div>';
+                echo '<p class="description">Inherits categories & usages from its parent Property Type.</p>';
+            endif; ?>
+
+            <?php if ($tab === 'aliases'):
+                $subs = Hegzz_Lookups_Service::get_all_sub_properties(['is_active' => null]);
+                $projects = get_posts(['post_type' => 'projects', 'posts_per_page' => -1]);
+                echo '<div class="form-field"><label>Sub-Property</label><select name="sub_property_id" required>';
+                foreach($subs as $s) echo '<option value="'.$s['id'].'" '.selected($item['sub_property_id'] ?? 0, $s['id'], false).'>'.$s['name_en'].'</option>';
+                echo '</select></div>';endif; ?>
+
+            <?php submit_button($action === 'edit' ? 'Update' : 'Add'); ?>
+        </form>
+    </div>
+    <?php
+}
+
+function hegzz_lookups_render_quick_edit($tab) {
+    if (!isset($_GET['action']) || $_GET['action'] !== 'quick-edit' || empty($_GET['id'])) {
+        return;
+    }
+    $entity_map = hegzz_lookups_get_entity_map();
+    $singular_entity = $entity_map[$tab] ?? '';
+    $item = call_user_func(['Hegzz_Lookups_Service', 'get_' . $singular_entity], (int) $_GET['id']);
+    if (!$item) return;
+    ?>
+    <div class="form-wrap">
+        <h2><?php _e('Quick Edit', 'aqarand'); ?></h2>
+        <form method="post" action="?page=hegzz-lookups-types&tab=<?php echo esc_attr($tab); ?>">
+            <?php wp_nonce_field('hegzz_quick_edit_lookup'); ?>
+            <input type="hidden" name="quick_edit" value="1">
+            <input type="hidden" name="id" value="<?php echo esc_attr($item['id']); ?>">
+            <?php if ($tab === 'aliases'): ?>
+                <?php $subs = Hegzz_Lookups_Service::get_all_sub_properties(['is_active' => null]); $projects = get_posts(['post_type' => 'projects', 'posts_per_page' => -1]); ?>
+                <div class="form-field"><label for="qe_alias_name_en">Name (EN)</label><input type="text" name="name_en" id="qe_alias_name_en" value="<?php echo esc_attr($item['name_en']); ?>" required></div>
+                <div class="form-field"><label for="qe_alias_name_ar">Name (AR)</label><input type="text" name="name_ar" id="qe_alias_name_ar" value="<?php echo esc_attr($item['name_ar']); ?>" required></div>
+                <div class="form-field"><label>Sub-Property</label><select name="sub_property_id" required><?php foreach($subs as $s) { echo '<option value="'.$s['id'].'" '.selected($item['sub_property_id'], $s['id'], false).'>'.$s['name_en'].'</option>'; } ?></select></div>            <?php else: ?>
+                <?php if ($tab === 'sub-properties'): ?><input type="hidden" name="property_type_id" value="<?php echo esc_attr($item['property_type_id']); ?>"><?php endif; ?>
+                <div class="form-field"><label for="qe_name_en">Name (EN)</label><input type="text" name="name_en" id="qe_name_en" value="<?php echo esc_attr($item['name_en']); ?>" required></div>
+                <div class="form-field"><label for="qe_name_ar">Name (AR)</label><input type="text" name="name_ar" id="qe_name_ar" value="<?php echo esc_attr($item['name_ar']); ?>" required></div>
+                <div class="form-field"><label for="qe_icon">Bootstrap Icon Class</label><input type="text" name="icon_class" id="qe_icon" value="<?php echo esc_attr($item['icon_class']); ?>"></div>
+                <div class="form-field"><label for="qe_sort_order">Sort Order</label><input type="number" name="sort_order" id="qe_sort_order" value="<?php echo esc_attr($item['sort_order'] ?? 0); ?>" min="0"></div>
+                <div class="form-field"><label><input type="checkbox" name="is_active" value="1" <?php checked($item['is_active'], 1); ?>> <?php _e('Active', 'aqarand'); ?></label></div>
+            <?php endif; ?>
+            <?php submit_button(__('Save Quick Edit', 'aqarand')); ?>
+        </form>
+    </div>
+    <?php
+}
+
+function hegzz_lookups_handle_form_actions($tab) {
+    hegzz_lookups_handle_bulk_actions($tab);
+    $redirect_url = hegzz_lookups_redirect_url($tab);
+    $entity_map = hegzz_lookups_get_entity_map();
+    $singular_entity = $entity_map[$tab] ?? '';
+
+    // Handle Delete Action
+    if (isset($_GET['action'], $_GET['id'], $_GET['_wpnonce']) && $_GET['action'] === 'delete') {
+        if (wp_verify_nonce($_GET['_wpnonce'], 'hegzz_delete_lookup')) {
+            $result = call_user_func(['Hegzz_Lookups_Service', 'delete_' . $singular_entity], (int)$_GET['id']);
+            hegzz_lookups_flush_cache();
+            if ($result) {
+                set_transient('hegzz_lookup_success', 'Item deleted successfully.', 30);
+            } else {
+                set_transient('hegzz_lookup_error', 'Failed to delete item.', 30);
+            }
+        } else {
+            set_transient('hegzz_lookup_error', 'Invalid security token.', 30);
+        }
+        hegzz_lookups_safe_redirect($redirect_url);
+    }
+
+    // Quick edit
+    if (isset($_POST['quick_edit']) && wp_verify_nonce($_POST['_wpnonce'], 'hegzz_quick_edit_lookup')) {
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+        $data = [
+            'name_en' => sanitize_text_field($_POST['name_en']),
+            'name_ar' => sanitize_text_field($_POST['name_ar']),
+            'icon_class' => sanitize_text_field($_POST['icon_class'] ?? ''),
+            'sort_order' => isset($_POST['sort_order']) ? (int) $_POST['sort_order'] : 0,
+            'is_active' => isset($_POST['is_active']) ? 1 : 0,
+        ];
+        if ($tab === 'aliases') {
+            $alias_data = [
+                'name_en' => sanitize_text_field($_POST['name_en']),
+                'name_ar' => sanitize_text_field($_POST['name_ar']),
+                'sub_property_id' => isset($_POST['sub_property_id']) ? (int) $_POST['sub_property_id'] : 0,
+            ];
+            $result = Hegzz_Lookups_Service::update_alias($id, $alias_data);
+        } elseif ($tab === 'property-types') {
+            $existing_categories = Hegzz_Lookups_Service::get_categories_for_property_type($id);
+            $existing_usages = Hegzz_Lookups_Service::get_usages_for_property_type($id);
+            $result = Hegzz_Lookups_Service::update_property_type($id, $data, $existing_categories, $existing_usages);
+        } else {
+            if ($tab === 'sub-properties') {
+                $data['property_type_id'] = isset($_POST['property_type_id']) ? (int) $_POST['property_type_id'] : 0;
+            }
+            $result = call_user_func(['Hegzz_Lookups_Service', 'update_' . $singular_entity], $id, $data);
+        }
+        hegzz_lookups_flush_cache();
+        if ($result && !is_wp_error($result)) {
+            set_transient('hegzz_lookup_success', 'Item updated successfully.', 30);
+        } else {
+            $error_message = is_wp_error($result) ? $result->get_error_message() : 'An unknown error occurred.';
+            set_transient('hegzz_lookup_error', $error_message, 30);
+        }
+        hegzz_lookups_safe_redirect($redirect_url);
+    }
+
+    // Handle Add/Update Actions
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['action'], $_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'hegzz_save_lookup')) return;
+
+    $action = $_POST['action'];
+    $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+
+    $data = [
+        'name_en' => sanitize_text_field($_POST['name_en']),
+        'name_ar' => sanitize_text_field($_POST['name_ar']),
+        'icon_class' => sanitize_text_field($_POST['icon_class']),
+        'sort_order' => isset($_POST['sort_order']) ? (int)$_POST['sort_order'] : 0,
+        'is_active' => isset($_POST['is_active']) ? 1 : 0,
+    ];
+
+    $result = false;
+
+    switch ($tab) {
+        case 'property-types':
+            $cat_ids = isset($_POST['category_ids']) ? array_map('intval', $_POST['category_ids']) : [];
+            $usage_ids = isset($_POST['usage_ids']) ? array_map('intval', $_POST['usage_ids']) : [];
+            if ($action === 'add') $result = Hegzz_Lookups_Service::create_property_type($data, $cat_ids, $usage_ids);
+            elseif ($id > 0) $result = Hegzz_Lookups_Service::update_property_type($id, $data, $cat_ids, $usage_ids);
+            break;
+        case 'sub-properties':
+            $parent_id = (int)$_POST['property_type_id'];
+            $data['property_type_id'] = $parent_id;
+            if ($action === 'add') $result = Hegzz_Lookups_Service::create_sub_property($data);
+            elseif ($id > 0) $result = Hegzz_Lookups_Service::update_sub_property($id, $data);
+            break;
+        case 'aliases':
+            $alias_data = ['name_en' => $data['name_en'], 'name_ar' => $data['name_ar'], 'sub_property_id' => (int)$_POST['sub_property_id'], 'project_id' => 0];
+            if ($action === 'add') $result = Hegzz_Lookups_Service::create_alias($alias_data);
+            elseif ($id > 0) $result = Hegzz_Lookups_Service::update_alias($id, $alias_data);
+            break;
+        default:
+            if ($action === 'add') $result = call_user_func(['Hegzz_Lookups_Service', 'create_' . $singular_entity], $data);
+            elseif ($id > 0) $result = call_user_func(['Hegzz_Lookups_Service', 'update_' . $singular_entity], $id, $data);
+            break;
+    }
+
+    if ($result && !is_wp_error($result)) {
+        hegzz_lookups_flush_cache();
+        $message = $action === 'add' ? 'Item added successfully.' : 'Item updated successfully.';
+        set_transient('hegzz_lookup_success', $message, 30);
+    } else {
+        $error_message = is_wp_error($result) ? $result->get_error_message() : 'An unknown error occurred.';
+        set_transient('hegzz_lookup_error', $error_message, 30);
+    }
+    hegzz_lookups_safe_redirect($redirect_url);
+}
+
+function hegzz_lookups_handle_bulk_actions($tab) {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['hegzz_lookup_bulk_nonce']) || !wp_verify_nonce($_POST['hegzz_lookup_bulk_nonce'], 'hegzz_lookup_bulk_action')) {
+        return;
+    }
+    $action = $_POST['action'] !== '-1' ? $_POST['action'] : ($_POST['action2'] ?? '-1');
+    if (!in_array($action, ['activate', 'deactivate', 'delete'], true)) {
+        return;
+    }
+    $ids = isset($_POST['ids']) ? array_map('intval', (array)$_POST['ids']) : [];
+    if (empty($ids)) return;
+
+    if ($tab === 'aliases' && $action === 'delete') {
+        foreach ($ids as $id) {
+            Hegzz_Lookups_Service::delete_alias($id);
+        }
+        hegzz_lookups_flush_cache();
+        set_transient('hegzz_lookup_success', 'Bulk action applied.', 30);
+        hegzz_lookups_safe_redirect(hegzz_lookups_redirect_url($tab));
+    }
+
+    $method_map = [
+        'categories' => 'set_category_active_state',
+        'property-types' => 'set_property_type_active_state',
+        'sub-properties' => 'set_sub_property_active_state',
+        'usages' => 'set_usage_active_state',
+    ];
+
+    if (!isset($method_map[$tab])) return;
+    $state = ($action === 'activate') ? 1 : 0;
+    call_user_func(['Hegzz_Lookups_Service', $method_map[$tab]], $ids, $state);
+    hegzz_lookups_flush_cache();
+    set_transient('hegzz_lookup_success', 'Bulk action applied.', 30);
+    hegzz_lookups_safe_redirect(hegzz_lookups_redirect_url($tab));
+}
+
+function hegzz_lookups_redirect_url($tab) {
+    return add_query_arg(
+        [
+            'page' => 'hegzz-lookups-types',
+            'tab'  => $tab,
+        ],
+        admin_url('admin.php')
+    );
+}
+
+function hegzz_lookups_safe_redirect($url) {
+    $redirected = wp_safe_redirect($url);
+
+    if ($redirected === false) {
+        $redirected = wp_redirect($url);
+    }
+
+    // If headers were sent (or redirect functions returned a string without sending headers), fall back to HTML/JS redirect to
+    // avoid leaving the user on a blank screen.
+    if (headers_sent()) {
+        echo '<meta http-equiv="refresh" content="0;url=' . esc_url($url) . '">';
+        echo '<script>window.location.href = ' . wp_json_encode($url) . ';</script>';
+        return;
+    }
+
+    if ($redirected) {
+        exit;
+    }
+}

@@ -1,0 +1,1829 @@
+{
+  "categories": [
+    {
+      "slug": "residential",
+      "name_en": "Residential",
+      "name_ar": "سكني",
+      "icon_class": "bi bi-house-door",
+      "sort_order": 0,
+      "is_active": true
+    },
+    {
+      "slug": "commercial",
+      "name_en": "Commercial",
+      "name_ar": "تجاري",
+      "icon_class": "bi bi-shop",
+      "sort_order": 1,
+      "is_active": true
+    },
+    {
+      "slug": "vacation-coastal",
+      "name_en": "Vacation & Coastal",
+      "name_ar": "إجازات وساحلي",
+      "icon_class": "bi bi-umbrella",
+      "sort_order": 3,
+      "is_active": true
+    },
+    {
+      "slug": "mixed-use-investment",
+      "name_en": "Mixed Use & Investment",
+      "name_ar": "استثماري / متعدد الاستخدام",
+      "icon_class": "bi bi-layers",
+      "sort_order": 4,
+      "is_active": true
+    },
+    {
+      "slug": "industrial-special-use",
+      "name_en": "Industrial & Special Use",
+      "name_ar": "صناعي وخدمي",
+      "icon_class": "bi bi-gear-wide-connected",
+      "sort_order": 5,
+      "is_active": true
+    }
+  ],
+  "usages": [
+    {
+      "slug": "residental",
+      "name_en": "Residental",
+      "name_ar": "سكني",
+      "icon_class": "bi bi-house-door",
+      "sort_order": 0,
+      "is_active": true
+    },
+    {
+      "slug": "administrative",
+      "name_en": "administrative",
+      "name_ar": "اداري",
+      "icon_class": "bi bi-building",
+      "sort_order": 0,
+      "is_active": true
+    },
+    {
+      "slug": "medical",
+      "name_en": "medical",
+      "name_ar": "طبي",
+      "icon_class": "bi bi-hospital",
+      "sort_order": 0,
+      "is_active": true
+    },
+    {
+      "slug": "commercial",
+      "name_en": "commercial",
+      "name_ar": "تجاري",
+      "icon_class": "bi bi-shop",
+      "sort_order": 0,
+      "is_active": true
+    },
+    {
+      "slug": "industrial",
+      "name_en": "Industrial",
+      "name_ar": "صناعي",
+      "icon_class": "bi bi-gear",
+      "sort_order": 0,
+      "is_active": true
+    }
+  ],
+  "property_types": [
+    {
+      "slug": "chalet",
+      "name_en": "Chalet",
+      "name_ar": "شاليه",
+      "icon_class": "bi bi-house-door",
+      "sort_order": 0,
+      "is_active": true,
+      "categories": [
+        "vacation-coastal"
+      ],
+      "usages": [
+        "residental"
+      ]
+    },
+    {
+      "slug": "apartment",
+      "name_en": "Apartment",
+      "name_ar": "شقة",
+      "icon_class": "bi bi-building",
+      "sort_order": 1,
+      "is_active": true,
+      "categories": [
+        "residential"
+      ],
+      "usages": [
+        "residental"
+      ]
+    },
+    {
+      "slug": "apartments",
+      "name_en": "Apartments",
+      "name_ar": "شقق",
+      "icon_class": "bi bi-building",
+      "sort_order": 10,
+      "is_active": true,
+      "categories": [
+        "residential"
+      ],
+      "usages": [
+        "residental"
+      ]
+    },
+    {
+      "slug": "villas",
+      "name_en": "Villas",
+      "name_ar": "فيلات",
+      "icon_class": "bi bi-house",
+      "sort_order": 11,
+      "is_active": true,
+      "categories": [
+        "residential"
+      ],
+      "usages": [
+        "residental"
+      ]
+    },
+    {
+      "slug": "special-residential-units",
+      "name_en": "Special Residential Units",
+      "name_ar": "وحدات سكنية خاصة",
+      "icon_class": "bi bi-stars",
+      "sort_order": 12,
+      "is_active": true,
+      "categories": [
+        "residential"
+      ],
+      "usages": [
+        "residental"
+      ]
+    },
+    {
+      "slug": "chalets",
+      "name_en": "Chalets",
+      "name_ar": "شاليهات",
+      "icon_class": "bi bi-umbrella",
+      "sort_order": 20,
+      "is_active": true,
+      "categories": [
+        "vacation-coastal"
+      ],
+      "usages": [
+        "residental"
+      ]
+    },
+    {
+      "slug": "coastal-villas",
+      "name_en": "Coastal Villas",
+      "name_ar": "فيلات ساحلية",
+      "icon_class": "bi bi-water",
+      "sort_order": 21,
+      "is_active": true,
+      "categories": [
+        "vacation-coastal"
+      ],
+      "usages": [
+        "residental"
+      ]
+    },
+    {
+      "slug": "hotel-units",
+      "name_en": "Hotel Units",
+      "name_ar": "وحدات فندقية",
+      "icon_class": "bi bi-building",
+      "sort_order": 22,
+      "is_active": true,
+      "categories": [
+        "vacation-coastal"
+      ],
+      "usages": [
+        "residental"
+      ]
+    },
+    {
+      "slug": "retail",
+      "name_en": "Retail",
+      "name_ar": "محلات",
+      "icon_class": "bi bi-shop",
+      "sort_order": 30,
+      "is_active": true,
+      "categories": [
+        "commercial"
+      ],
+      "usages": [
+        "commercial"
+      ]
+    },
+    {
+      "slug": "offices",
+      "name_en": "Offices",
+      "name_ar": "مكاتب",
+      "icon_class": "bi bi-briefcase",
+      "sort_order": 31,
+      "is_active": true,
+      "categories": [
+        "commercial"
+      ],
+      "usages": [
+        "administrative"
+      ]
+    },
+    {
+      "slug": "medical",
+      "name_en": "Medical",
+      "name_ar": "طبي",
+      "icon_class": "bi bi-hospital",
+      "sort_order": 32,
+      "is_active": true,
+      "categories": [
+        "commercial"
+      ],
+      "usages": [
+        "medical"
+      ]
+    },
+    {
+      "slug": "investment-units",
+      "name_en": "Investment Units",
+      "name_ar": "وحدات استثمارية",
+      "icon_class": "bi bi-graph-up",
+      "sort_order": 40,
+      "is_active": true,
+      "categories": [
+        "mixed-use-investment"
+      ],
+      "usages": [
+        "administrative",
+        "commercial",
+        "residental"
+      ]
+    },
+    {
+      "slug": "industrial",
+      "name_en": "Industrial",
+      "name_ar": "صناعي",
+      "icon_class": "bi bi-gear",
+      "sort_order": 50,
+      "is_active": true,
+      "categories": [
+        "industrial-special-use"
+      ],
+      "usages": [
+        "industrial"
+      ]
+    }
+  ],
+  "sub_properties": [
+    {
+      "slug": "apartment-with-garden",
+      "name_en": "Apartment with Garden",
+      "name_ar": "شقة بحديقة",
+      "icon_class": "bi bi-flower1",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "apartment"
+    },
+    {
+      "slug": "studio",
+      "name_en": "Studio",
+      "name_ar": "ستوديو",
+      "icon_class": "bi bi-door-open",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "apartment"
+    },
+    {
+      "slug": "apartment",
+      "name_en": "Apartment",
+      "name_ar": "شقة",
+      "icon_class": "bi bi-building",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "apartments"
+    },
+    {
+      "slug": "duplex",
+      "name_en": "Duplex",
+      "name_ar": "دوبلكس",
+      "icon_class": "bi bi-layers",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "apartments"
+    },
+    {
+      "slug": "penthouse",
+      "name_en": "Penthouse",
+      "name_ar": "بنتهاوس",
+      "icon_class": "bi bi-house-up",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "apartments"
+    },
+    {
+      "slug": "loft",
+      "name_en": "Loft",
+      "name_ar": "لوفت",
+      "icon_class": "bi bi-aspect-ratio",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "apartments"
+    },
+    {
+      "slug": "standalone-villa",
+      "name_en": "Standalone Villa",
+      "name_ar": "فيلا مستقلة",
+      "icon_class": "bi bi-house",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "villas"
+    },
+    {
+      "slug": "twin-house",
+      "name_en": "Twin House",
+      "name_ar": "توين هاوس",
+      "icon_class": "bi bi-house-door",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "villas"
+    },
+    {
+      "slug": "townhouse",
+      "name_en": "Townhouse",
+      "name_ar": "تاون هاوس",
+      "icon_class": "bi bi-house-heart",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "villas"
+    },
+    {
+      "slug": "cluster-villa",
+      "name_en": "Cluster Villa",
+      "name_ar": "كلستر",
+      "icon_class": "bi bi-grid-3x3-gap",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "villas"
+    },
+    {
+      "slug": "urban-chalets",
+      "name_en": "Urban Chalets",
+      "name_ar": "شاليهات حضرية",
+      "icon_class": "bi bi-building",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "special-residential-units"
+    },
+    {
+      "slug": "serviced-housing",
+      "name_en": "Serviced Housing",
+      "name_ar": "مساكن مخدومة",
+      "icon_class": "bi bi-stars",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "special-residential-units"
+    },
+    {
+      "slug": "chalet",
+      "name_en": "Chalet",
+      "name_ar": "شاليه",
+      "icon_class": "bi bi-umbrella",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "chalets"
+    },
+    {
+      "slug": "cabin",
+      "name_en": "Cabin",
+      "name_ar": "كابين",
+      "icon_class": "bi bi-house",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "chalets"
+    },
+    {
+      "slug": "holiday-home",
+      "name_en": "Holiday Home",
+      "name_ar": "بيت عطلات",
+      "icon_class": "bi bi-house-heart",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "chalets"
+    },
+    {
+      "slug": "beach-villa",
+      "name_en": "Beach Villa",
+      "name_ar": "فيلا شاطئية",
+      "icon_class": "bi bi-water",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "coastal-villas"
+    },
+    {
+      "slug": "cabana",
+      "name_en": "Cabana",
+      "name_ar": "كابانا",
+      "icon_class": "bi bi-sun",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "coastal-villas"
+    },
+    {
+      "slug": "hotel-rooms",
+      "name_en": "Hotel Rooms",
+      "name_ar": "غرف فندقية",
+      "icon_class": "bi bi-door-closed",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "hotel-units"
+    },
+    {
+      "slug": "suites",
+      "name_en": "Suites",
+      "name_ar": "أجنحة",
+      "icon_class": "bi bi-door-open",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "hotel-units"
+    },
+    {
+      "slug": "shop",
+      "name_en": "Shop",
+      "name_ar": "محل",
+      "icon_class": "bi bi-shop",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "retail"
+    },
+    {
+      "slug": "kiosk",
+      "name_en": "Kiosk",
+      "name_ar": "كشك",
+      "icon_class": "bi bi-shop-window",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "retail"
+    },
+    {
+      "slug": "restaurant",
+      "name_en": "Restaurant",
+      "name_ar": "مطعم",
+      "icon_class": "bi bi-cup-hot",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "retail"
+    },
+    {
+      "slug": "administrative-office",
+      "name_en": "Administrative Office",
+      "name_ar": "مكتب إداري",
+      "icon_class": "bi bi-briefcase",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "offices"
+    },
+    {
+      "slug": "corporate-office",
+      "name_en": "Corporate Office",
+      "name_ar": "مكتب شركات",
+      "icon_class": "bi bi-building",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "offices"
+    },
+    {
+      "slug": "clinics",
+      "name_en": "Clinics",
+      "name_ar": "عيادات",
+      "icon_class": "bi bi-hospital",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "medical"
+    },
+    {
+      "slug": "labs",
+      "name_en": "Labs",
+      "name_ar": "معامل",
+      "icon_class": "bi bi-droplet",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "medical"
+    },
+    {
+      "slug": "medical-centers",
+      "name_en": "Medical Centers",
+      "name_ar": "مراكز طبية",
+      "icon_class": "bi bi-hospital",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "medical"
+    },
+    {
+      "slug": "admin-commercial",
+      "name_en": "Admin / Commercial",
+      "name_ar": "إداري / تجاري",
+      "icon_class": "bi bi-layers",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "investment-units"
+    },
+    {
+      "slug": "hotel-investment",
+      "name_en": "Hotel Investment",
+      "name_ar": "فندقي",
+      "icon_class": "bi bi-building",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "investment-units"
+    },
+    {
+      "slug": "warehouses",
+      "name_en": "Warehouses",
+      "name_ar": "مخازن",
+      "icon_class": "bi bi-box-seam",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "industrial"
+    },
+    {
+      "slug": "factories",
+      "name_en": "Factories",
+      "name_ar": "مصانع",
+      "icon_class": "bi bi-gear",
+      "sort_order": 0,
+      "is_active": true,
+      "parent_property_type_slug": "industrial"
+    }
+  ],
+  "property_models": [
+    {
+      "slug": "test-pm",
+      "name_en": "TEST PM",
+      "name_ar": "تيست",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartment",
+      "sub_property_slug": null
+    },
+    {
+      "slug": "studio",
+      "name_en": "Studio",
+      "name_ar": "استوديو",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "apartment"
+    },
+    {
+      "slug": "1-bedroom",
+      "name_en": "1 Bedroom",
+      "name_ar": "غرفة واحدة",
+      "bedrooms": 1,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartment",
+      "sub_property_slug": null
+    },
+    {
+      "slug": "2-bedrooms",
+      "name_en": "2 Bedrooms",
+      "name_ar": "غرفتين",
+      "bedrooms": 2,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartment",
+      "sub_property_slug": null
+    },
+    {
+      "slug": "3-bedrooms",
+      "name_en": "3 Bedrooms",
+      "name_ar": "3 غرف",
+      "bedrooms": 3,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartment",
+      "sub_property_slug": null
+    },
+    {
+      "slug": "junior-suite",
+      "name_en": "Junior Suite",
+      "name_ar": "جونيور سويت",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "hotel-units",
+      "sub_property_slug": "suites"
+    },
+    {
+      "slug": "1-bedroom-apartment",
+      "name_en": "1 Bedroom Apartment",
+      "name_ar": "شقة غرفة واحدة",
+      "bedrooms": 1,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "apartment"
+    },
+    {
+      "slug": "2-bedrooms-apartment",
+      "name_en": "2 Bedrooms Apartment",
+      "name_ar": "شقة غرفتين",
+      "bedrooms": 2,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "apartment"
+    },
+    {
+      "slug": "3-bedrooms-apartment",
+      "name_en": "3 Bedrooms Apartment",
+      "name_ar": "شقة 3 غرف",
+      "bedrooms": 3,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "apartment"
+    },
+    {
+      "slug": "4-bedrooms-apartment",
+      "name_en": "4 Bedrooms Apartment",
+      "name_ar": "شقة 4 غرف",
+      "bedrooms": 4,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "apartment"
+    },
+    {
+      "slug": "ground-floor-apartment",
+      "name_en": "Ground Floor Apartment",
+      "name_ar": "شقة دور أرضي",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "apartment"
+    },
+    {
+      "slug": "ground-floor-with-garden",
+      "name_en": "Ground Floor with Garden",
+      "name_ar": "أرضي بحديقة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "apartment"
+    },
+    {
+      "slug": "typical-floor-apartment",
+      "name_en": "Typical Floor Apartment",
+      "name_ar": "شقة دور متكرر",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "apartment"
+    },
+    {
+      "slug": "penthouse-with-roof",
+      "name_en": "Penthouse with Roof",
+      "name_ar": "بنتهاوس بروف",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "penthouse"
+    },
+    {
+      "slug": "penthouse-with-terrace",
+      "name_en": "Penthouse with Terrace",
+      "name_ar": "بنتهاوس بتراس",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "penthouse"
+    },
+    {
+      "slug": "duplex-ground-first",
+      "name_en": "Duplex (Ground + First)",
+      "name_ar": "دوبلكس (أرضي + أول)",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "duplex"
+    },
+    {
+      "slug": "duplex-upper",
+      "name_en": "Duplex (Upper)",
+      "name_ar": "دوبلكس علوي",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "duplex"
+    },
+    {
+      "slug": "loft-apartment",
+      "name_en": "Loft Apartment",
+      "name_ar": "لوفت",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "loft"
+    },
+    {
+      "slug": "sky-apartment",
+      "name_en": "Sky Apartment",
+      "name_ar": "سكاي أبارتمنت",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "apartment"
+    },
+    {
+      "slug": "serviced-apartment",
+      "name_en": "Serviced Apartment",
+      "name_ar": "شقة مخدومة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "mixed-use-investment"
+      ],
+      "property_type_slug": "investment-units",
+      "sub_property_slug": "hotel-investment"
+    },
+    {
+      "slug": "fully-furnished-apartment",
+      "name_en": "Fully Furnished Apartment",
+      "name_ar": "شقة مفروشة بالكامل",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "apartments",
+      "sub_property_slug": "apartment"
+    },
+    {
+      "slug": "standalone-villa",
+      "name_en": "Standalone Villa",
+      "name_ar": "فيلا مستقلة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "standalone-villa"
+    },
+    {
+      "slug": "standalone-villa-with-garden",
+      "name_en": "Standalone Villa with Garden",
+      "name_ar": "فيلا مستقلة بحديقة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "standalone-villa"
+    },
+    {
+      "slug": "standalone-villa-with-roof",
+      "name_en": "Standalone Villa with Roof",
+      "name_ar": "فيلا مستقلة بروف",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "standalone-villa"
+    },
+    {
+      "slug": "twin-house",
+      "name_en": "Twin House",
+      "name_ar": "توين هاوس",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "twin-house"
+    },
+    {
+      "slug": "twin-house-corner",
+      "name_en": "Twin House Corner",
+      "name_ar": "توين هاوس كورنر",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "twin-house"
+    },
+    {
+      "slug": "townhouse-middle",
+      "name_en": "Townhouse Middle",
+      "name_ar": "تاون هاوس ميدل",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "townhouse"
+    },
+    {
+      "slug": "townhouse-corner",
+      "name_en": "Townhouse Corner",
+      "name_ar": "تاون هاوس كورنر",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "townhouse"
+    },
+    {
+      "slug": "cluster-villa",
+      "name_en": "Cluster Villa",
+      "name_ar": "كلستر",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "cluster-villa"
+    },
+    {
+      "slug": "villa-with-basement",
+      "name_en": "Villa with Basement",
+      "name_ar": "فيلا ببدروم",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "standalone-villa"
+    },
+    {
+      "slug": "villa-with-driver-room",
+      "name_en": "Villa with Driver Room",
+      "name_ar": "فيلا بغرفة سائق",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "standalone-villa"
+    },
+    {
+      "slug": "villa-with-nanny-room",
+      "name_en": "Villa with Nanny Room",
+      "name_ar": "فيلا بغرفة ناني",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "standalone-villa"
+    },
+    {
+      "slug": "smart-villa",
+      "name_en": "Smart Villa",
+      "name_ar": "فيلا سمارت",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "standalone-villa"
+    },
+    {
+      "slug": "luxury-villa",
+      "name_en": "Luxury Villa",
+      "name_ar": "فيلا فاخرة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "villas",
+      "sub_property_slug": "standalone-villa"
+    },
+    {
+      "slug": "serviced-residence",
+      "name_en": "Serviced Residence",
+      "name_ar": "سكن مخدوم",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "special-residential-units",
+      "sub_property_slug": "serviced-housing"
+    },
+    {
+      "slug": "branded-residence",
+      "name_en": "Branded Residence",
+      "name_ar": "سكن براند",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "special-residential-units",
+      "sub_property_slug": "serviced-housing"
+    },
+    {
+      "slug": "managed-residence",
+      "name_en": "Managed Residence",
+      "name_ar": "سكن مُدار",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "special-residential-units",
+      "sub_property_slug": "serviced-housing"
+    },
+    {
+      "slug": "co-living-unit",
+      "name_en": "Co-living Unit",
+      "name_ar": "وحدة كو-ليفينج",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "residential"
+      ],
+      "property_type_slug": "special-residential-units",
+      "sub_property_slug": "serviced-housing"
+    },
+    {
+      "slug": "studio-chalet",
+      "name_en": "Studio Chalet",
+      "name_ar": "شاليه استوديو",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "chalets",
+      "sub_property_slug": "chalet"
+    },
+    {
+      "slug": "1-bedroom-chalet",
+      "name_en": "1 Bedroom Chalet",
+      "name_ar": "شاليه غرفة واحدة",
+      "bedrooms": 1,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "chalets",
+      "sub_property_slug": "chalet"
+    },
+    {
+      "slug": "2-bedrooms-chalet",
+      "name_en": "2 Bedrooms Chalet",
+      "name_ar": "شاليه غرفتين",
+      "bedrooms": 2,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "chalets",
+      "sub_property_slug": "chalet"
+    },
+    {
+      "slug": "3-bedrooms-chalet",
+      "name_en": "3 Bedrooms Chalet",
+      "name_ar": "شاليه 3 غرف",
+      "bedrooms": 3,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "chalets",
+      "sub_property_slug": "chalet"
+    },
+    {
+      "slug": "chalet-with-garden",
+      "name_en": "Chalet with Garden",
+      "name_ar": "شاليه بحديقة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "chalets",
+      "sub_property_slug": "chalet"
+    },
+    {
+      "slug": "chalet-with-roof",
+      "name_en": "Chalet with Roof",
+      "name_ar": "شاليه بروف",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "chalets",
+      "sub_property_slug": "chalet"
+    },
+    {
+      "slug": "chalet-sea-view",
+      "name_en": "Chalet Sea View",
+      "name_ar": "شاليه فيو بحر",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "chalets",
+      "sub_property_slug": "chalet"
+    },
+    {
+      "slug": "chalet-pool-view",
+      "name_en": "Chalet Pool View",
+      "name_ar": "شاليه فيو حمام سباحة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "chalets",
+      "sub_property_slug": "chalet"
+    },
+    {
+      "slug": "chalet-lagoon-view",
+      "name_en": "Chalet Lagoon View",
+      "name_ar": "شاليه فيو لاجون",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "chalets",
+      "sub_property_slug": "chalet"
+    },
+    {
+      "slug": "beach-front-chalet",
+      "name_en": "Beach Front Chalet",
+      "name_ar": "شاليه على البحر مباشرة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "chalets",
+      "sub_property_slug": "chalet"
+    },
+    {
+      "slug": "beach-villa",
+      "name_en": "Beach Villa",
+      "name_ar": "فيلا شاطئية",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "beach-villa"
+    },
+    {
+      "slug": "beach-villa-standalone",
+      "name_en": "Beach Villa Standalone",
+      "name_ar": "فيلا شاطئية مستقلة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "beach-villa"
+    },
+    {
+      "slug": "beach-twin-house",
+      "name_en": "Beach Twin House",
+      "name_ar": "توين هاوس شاطئي",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "beach-villa"
+    },
+    {
+      "slug": "beach-townhouse",
+      "name_en": "Beach Townhouse",
+      "name_ar": "تاون هاوس شاطئي",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "beach-villa"
+    },
+    {
+      "slug": "villa-first-row",
+      "name_en": "Villa First Row",
+      "name_ar": "فيلا صف أول",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "beach-villa"
+    },
+    {
+      "slug": "villa-second-row",
+      "name_en": "Villa Second Row",
+      "name_ar": "فيلا صف تاني",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "beach-villa"
+    },
+    {
+      "slug": "villa-with-private-pool",
+      "name_en": "Villa with Private Pool",
+      "name_ar": "فيلا بحمام سباحة خاص",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "beach-villa"
+    },
+    {
+      "slug": "lagoon-front-villa",
+      "name_en": "Lagoon Front Villa",
+      "name_ar": "فيلا على اللاجون",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "beach-villa"
+    },
+    {
+      "slug": "sea-view-villa",
+      "name_en": "Sea View Villa",
+      "name_ar": "فيلا فيو بحر",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "beach-villa"
+    },
+    {
+      "slug": "cabana",
+      "name_en": "Cabana",
+      "name_ar": "كابانا",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "cabana"
+    },
+    {
+      "slug": "cabana-pool-side",
+      "name_en": "Cabana Pool Side",
+      "name_ar": "كابانا جنب البسين",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "cabana"
+    },
+    {
+      "slug": "cabana-beach-front",
+      "name_en": "Cabana Beach Front",
+      "name_ar": "كابانا على البحر",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "coastal-villas",
+      "sub_property_slug": "cabana"
+    },
+    {
+      "slug": "hotel-room",
+      "name_en": "Hotel Room",
+      "name_ar": "غرفة فندقية",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "hotel-units",
+      "sub_property_slug": "hotel-rooms"
+    },
+    {
+      "slug": "executive-suite",
+      "name_en": "Executive Suite",
+      "name_ar": "إكزكيوتيف سويت",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "hotel-units",
+      "sub_property_slug": "suites"
+    },
+    {
+      "slug": "family-suite",
+      "name_en": "Family Suite",
+      "name_ar": "فاميلي سويت",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "hotel-units",
+      "sub_property_slug": "suites"
+    },
+    {
+      "slug": "hotel-apartment",
+      "name_en": "Hotel Apartment",
+      "name_ar": "شقة فندقية",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "mixed-use-investment"
+      ],
+      "property_type_slug": "investment-units",
+      "sub_property_slug": "hotel-investment"
+    },
+    {
+      "slug": "serviced-hotel-unit",
+      "name_en": "Serviced Hotel Unit",
+      "name_ar": "وحدة فندقية مخدومة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "vacation-coastal"
+      ],
+      "property_type_slug": "hotel-units",
+      "sub_property_slug": "hotel-rooms"
+    },
+    {
+      "slug": "retail-shop",
+      "name_en": "Retail Shop",
+      "name_ar": "محل تجاري",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "retail",
+      "sub_property_slug": "shop"
+    },
+    {
+      "slug": "corner-shop",
+      "name_en": "Corner Shop",
+      "name_ar": "محل ناصية",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "retail",
+      "sub_property_slug": "shop"
+    },
+    {
+      "slug": "double-height-shop",
+      "name_en": "Double Height Shop",
+      "name_ar": "محل دابل هايت",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "retail",
+      "sub_property_slug": "shop"
+    },
+    {
+      "slug": "anchor-store",
+      "name_en": "Anchor Store",
+      "name_ar": "محل أنكور",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "retail",
+      "sub_property_slug": "shop"
+    },
+    {
+      "slug": "food-and-beverage-unit",
+      "name_en": "Food & Beverage Unit",
+      "name_ar": "وحدة F&B",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "retail",
+      "sub_property_slug": "restaurant"
+    },
+    {
+      "slug": "cafe",
+      "name_en": "Cafe",
+      "name_ar": "كافيه",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "retail",
+      "sub_property_slug": "restaurant"
+    },
+    {
+      "slug": "restaurant",
+      "name_en": "Restaurant",
+      "name_ar": "مطعم",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "retail",
+      "sub_property_slug": "restaurant"
+    },
+    {
+      "slug": "drive-through-unit",
+      "name_en": "Drive Through Unit",
+      "name_ar": "وحدة درايف ثرو",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "retail",
+      "sub_property_slug": "restaurant"
+    },
+    {
+      "slug": "kiosk",
+      "name_en": "Kiosk",
+      "name_ar": "كشك",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "retail",
+      "sub_property_slug": "kiosk"
+    },
+    {
+      "slug": "outdoor-retail-unit",
+      "name_en": "Outdoor Retail Unit",
+      "name_ar": "وحدة تجارية خارجية",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "retail",
+      "sub_property_slug": "shop"
+    },
+    {
+      "slug": "administrative-office",
+      "name_en": "Administrative Office",
+      "name_ar": "مكتب إداري",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "offices",
+      "sub_property_slug": "administrative-office"
+    },
+    {
+      "slug": "corporate-office",
+      "name_en": "Corporate Office",
+      "name_ar": "مكتب شركات",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "offices",
+      "sub_property_slug": "corporate-office"
+    },
+    {
+      "slug": "executive-office",
+      "name_en": "Executive Office",
+      "name_ar": "مكتب تنفيذي",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "offices",
+      "sub_property_slug": "administrative-office"
+    },
+    {
+      "slug": "fully-finished-office",
+      "name_en": "Fully Finished Office",
+      "name_ar": "مكتب تشطيب كامل",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "offices",
+      "sub_property_slug": "administrative-office"
+    },
+    {
+      "slug": "core-and-shell-office",
+      "name_en": "Core & Shell Office",
+      "name_ar": "مكتب كور آند شيل",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "offices",
+      "sub_property_slug": "administrative-office"
+    },
+    {
+      "slug": "co-working-space",
+      "name_en": "Co-working Space",
+      "name_ar": "كو-ووركينج",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "offices",
+      "sub_property_slug": "administrative-office"
+    },
+    {
+      "slug": "business-center-office",
+      "name_en": "Business Center Office",
+      "name_ar": "مكتب بمركز أعمال",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "offices",
+      "sub_property_slug": "administrative-office"
+    },
+    {
+      "slug": "medical-clinic",
+      "name_en": "Medical Clinic",
+      "name_ar": "عيادة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "medical",
+      "sub_property_slug": "clinics"
+    },
+    {
+      "slug": "dental-clinic",
+      "name_en": "Dental Clinic",
+      "name_ar": "عيادة أسنان",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "medical",
+      "sub_property_slug": "clinics"
+    },
+    {
+      "slug": "polyclinic",
+      "name_en": "Polyclinic",
+      "name_ar": "بولى كلينك",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "medical",
+      "sub_property_slug": "clinics"
+    },
+    {
+      "slug": "medical-center-unit",
+      "name_en": "Medical Center Unit",
+      "name_ar": "وحدة مركز طبي",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "medical",
+      "sub_property_slug": "medical-centers"
+    },
+    {
+      "slug": "radiology-center",
+      "name_en": "Radiology Center",
+      "name_ar": "مركز أشعة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "medical",
+      "sub_property_slug": "medical-centers"
+    },
+    {
+      "slug": "analysis-lab",
+      "name_en": "Analysis Lab",
+      "name_ar": "معمل تحاليل",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "medical",
+      "sub_property_slug": "labs"
+    },
+    {
+      "slug": "day-surgery-unit",
+      "name_en": "Day Surgery Unit",
+      "name_ar": "وحدة جراحة يومية",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "commercial"
+      ],
+      "property_type_slug": "medical",
+      "sub_property_slug": "medical-centers"
+    },
+    {
+      "slug": "mixed-use-unit",
+      "name_en": "Mixed Use Unit",
+      "name_ar": "وحدة متعددة الاستخدام",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "mixed-use-investment"
+      ],
+      "property_type_slug": "investment-units",
+      "sub_property_slug": "admin-commercial"
+    },
+    {
+      "slug": "commercial-office-unit",
+      "name_en": "Commercial Office Unit",
+      "name_ar": "وحدة مكتب/تجاري",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "mixed-use-investment"
+      ],
+      "property_type_slug": "investment-units",
+      "sub_property_slug": "admin-commercial"
+    },
+    {
+      "slug": "investment-unit-with-lease",
+      "name_en": "Investment Unit with Lease",
+      "name_ar": "وحدة بعقد إيجار",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "mixed-use-investment"
+      ],
+      "property_type_slug": "investment-units",
+      "sub_property_slug": "admin-commercial"
+    },
+    {
+      "slug": "guaranteed-return-unit",
+      "name_en": "Guaranteed Return Unit",
+      "name_ar": "وحدة بعائد مضمون",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "mixed-use-investment"
+      ],
+      "property_type_slug": "investment-units",
+      "sub_property_slug": "admin-commercial"
+    },
+    {
+      "slug": "warehouse",
+      "name_en": "Warehouse",
+      "name_ar": "مخزن",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "industrial-special-use"
+      ],
+      "property_type_slug": "industrial",
+      "sub_property_slug": "warehouses"
+    },
+    {
+      "slug": "storage-unit",
+      "name_en": "Storage Unit",
+      "name_ar": "وحدة تخزين",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "industrial-special-use"
+      ],
+      "property_type_slug": "industrial",
+      "sub_property_slug": "warehouses"
+    },
+    {
+      "slug": "light-industrial-unit",
+      "name_en": "Light Industrial Unit",
+      "name_ar": "وحدة صناعية خفيفة",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "industrial-special-use"
+      ],
+      "property_type_slug": "industrial",
+      "sub_property_slug": "warehouses"
+    },
+    {
+      "slug": "factory",
+      "name_en": "Factory",
+      "name_ar": "مصنع",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "industrial-special-use"
+      ],
+      "property_type_slug": "industrial",
+      "sub_property_slug": "factories"
+    },
+    {
+      "slug": "logistics-hub",
+      "name_en": "Logistics Hub",
+      "name_ar": "مركز لوجستيات",
+      "bedrooms": 0,
+      "icon_class": "bi bi-house-door",
+      "is_active": true,
+      "category_slugs": [
+        "industrial-special-use"
+      ],
+      "property_type_slug": "industrial",
+      "sub_property_slug": "factories"
+    }
+  ]
+}

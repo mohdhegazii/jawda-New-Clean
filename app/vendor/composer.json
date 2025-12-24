@@ -1,0 +1,9 @@
+{
+    "require": {
+        "fruitcakestudio/recaptcha": "^0.3.1",
+        "tgmpa/tgm-plugin-activation": "^2.6",
+        "rmccue/requests": "^2.0",
+        "jjgrainger/posttypes": "^2.2",
+        "htmlburger/carbon-fields": "^3.6"
+    }
+}

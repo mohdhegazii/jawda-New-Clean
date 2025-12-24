@@ -1,0 +1,12 @@
+.DS_Store
+node_modules/
+dist/
+build/
+*.log
+.env
+.env.local
+wp-content/uploads/
+wp-content/cache/
+.vscode/
+.idea/
+*__BACKUP_*

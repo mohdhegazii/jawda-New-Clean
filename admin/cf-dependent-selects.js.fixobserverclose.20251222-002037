@@ -1,0 +1,484 @@
+(function($){
+  'use strict';
+
+
+  // Bind relocation triggers once (unified, no-duplication guards inside relocate).
+  $(function(){ try { bindRelocationTriggers(); } catch(e) {} });
+  var mapController = null;
+  var mapReadyQueue = [];
+
+  function withMap(callback) {
+    if (mapController) {
+      callback(mapController);
+      return;
+    }
+
+    mapReadyQueue.push(callback);
+  }
+
+  function registerMapController(controller) {
+    mapController = controller;
+
+    mapReadyQueue.forEach(function(callback) {
+      if (typeof callback === 'function') {
+        callback(controller);
+      }
+    });
+
+    mapReadyQueue = [];
+  }
+
+  function relocateProjectLocationMetaBox() {
+    var $metaBox = $('#aqarand-project-location');
+    var $placeholder = $('#aqarand-project-location-placeholder');
+
+    if (!$metaBox.length || !$placeholder.length) {
+      return;
+    }
+
+
+    // === Unification guard: prevent duplicate relocate/render ===
+    // If placeholder already filled OR metabox already moved, do nothing.
+    if ($placeholder.hasClass('is-filled') || $metaBox.hasClass('aqarand-project-location--moved')) {
+      return;
+    }
+
+
+    var $content = $metaBox.find('.inside').children().detach();
+    if (!$content.length) {
+      return;
+    }
+
+    var headingText = $.trim($metaBox.find('.postbox-header h2, h2.hndle').first().text());
+    var $wrapper = $('<div>', { 'class': 'aqarand-project-location-section' });
+
+    if (headingText) {
+      $wrapper.append($('<h3>', {
+        'class': 'aqarand-project-location-heading',
+        'text': headingText
+      }));
+    }
+
+    $wrapper.append($content);
+    $placeholder.empty().append($wrapper).addClass('is-filled');
+    $metaBox.addClass('aqarand-project-location--moved').hide();
+
+    var $pickers = $wrapper.find('.aqarand-location-picker');
+
+    if ($pickers.length) {
+      $pickers.each(function(){
+        var el = this;
+
+        var triggerInvalidate = function() {
+          el.dispatchEvent(new CustomEvent('aqarandLocationPickerInvalidate'));
+        };
+
+        if (el.aqarandLocationPicker) {
+          triggerInvalidate();
+        } else {
+          var readyHandler = function() {
+            el.removeEventListener('aqarandLocationPickerReady', readyHandler);
+            triggerInvalidate();
+          };
+
+          el.addEventListener('aqarandLocationPickerReady', readyHandler);
+        }
+      });
+    }
+  }
+
+  function bindRelocationTriggers() {
+    if (bindRelocationTriggers._bound) { return; }
+    bindRelocationTriggers._bound = true;
+
+    function attemptRelocate() {
+      try { relocateProjectLocationMetaBox(); } catch (e) {}
+    }
+
+    // Initial + delayed attempts (Carbon/Gutenberg can render tabs late)
+    attemptRelocate();
+    setTimeout(attemptRelocate, 150);
+    setTimeout(attemptRelocate, 500);
+    setTimeout(attemptRelocate, 1200);
+    setTimeout(attemptRelocate, 2500);
+
+    // If user clicks around tabs/metaboxes, retry (guards prevent duplication)
+    $(document).on('click', 'a, button, .nav-tab, .components-button, .cf-container__tabs a, .carbon-tabs-nav a', function() {
+      setTimeout(attemptRelocate, 0);
+      setTimeout(attemptRelocate, 200);
+    });
+
+    // Observe DOM changes that happen when Carbon tabs show/hide content
+    if (window.MutationObserver) {
+      var obs = new MutationObserver(function() {
+        // Only attempt if placeholder exists and not filled yet (guard inside relocate handles this too)
+        if ($('#aqarand-project-location-placeholder').length && !$('#aqarand-project-location-placeholder').hasClass('is-filled')) {
+          setTimeout(attemptRelocate, 0);
+        }});
+
+      try {
+        obs.observe(document.body, {
+          subtree: true,
+          childList: true,
+          attributes: true,
+          attributeFilter: ['class', 'style', 'aria-hidden']
+        });
+      } catch (e) {}
+    }
+  }
+
+
+  function showError(msg, $context) {
+    console.error('[CF_DEP] ' + msg);
+    var $box = $context
+      ? $context.find('.aqarand-location-errors, .cf-dep-errors-box #cf-dep-errors')
+      : $('.aqarand-location-errors, .cf-dep-errors-box #cf-dep-errors');
+    if ($box.length) {
+      $box.html(msg).show(); // Use .html() to render potential links or markup
+    }
+  }
+
+  function clearError($context) {
+    var $box = $context
+      ? $context.find('.aqarand-location-errors, .cf-dep-errors-box #cf-dep-errors')
+      : $('.aqarand-location-errors, .cf-dep-errors-box #cf-dep-errors');
+    if ($box.length) {
+      $box.hide().empty();
+    }
+  }
+
+  function normalizeOption(value) {
+    if (value && typeof value === 'object') {
+      return {
+        label: value.label != null ? String(value.label) : '',
+        lat: value.lat != null ? value.lat : '',
+        lng: value.lng != null ? value.lng : ''
+      };
+    }
+
+    return {
+      label: value != null ? String(value) : '',
+      lat: '',
+      lng: ''
+    };
+  }
+
+  function fill($select, options, fallbackLabel) {
+    var normalized = (options && typeof options === 'object') ? options : {};
+    var fallback = fallbackLabel || (window.CF_DEP && CF_DEP.i18n && CF_DEP.i18n.no_options) || '— No options available —';
+
+    if (Object.keys(normalized).length === 0) {
+      normalized = { '': { label: fallback } };
+    }
+
+    $select.empty();
+
+    Object.keys(normalized).forEach(function(val) {
+      var opt = normalizeOption(normalized[val]);
+      var $option = $('<option>', { value: val, text: opt.label });
+
+      if (opt.lat !== '' && opt.lat !== null && opt.lat !== undefined) {
+        $option.attr('data-lat', opt.lat);
+      }
+
+      if (opt.lng !== '' && opt.lng !== null && opt.lng !== undefined) {
+        $option.attr('data-lng', opt.lng);
+      }
+
+      $select.append($option);
+    });
+  }
+
+  function setSelectedValue($select, value) {
+    if (typeof value === 'undefined' || value === null || value === '') {
+      $select.val('');
+      return false;
+    }
+
+    value = String(value);
+    var $match = $select.find('option').filter(function(){
+      return String($(this).val()) === value;
+    });
+
+    if ($match.length) {
+      $select.val(value);
+      return true;
+    }
+
+    return false;
+  }
+
+  function bindMapController() {
+    var picker = document.querySelector('.aqarand-project-location-box .aqarand-location-picker');
+    if (!picker) {
+      return;
+    }
+
+    picker.addEventListener('aqarandLocationPickerReady', function(event) {
+      registerMapController(event.detail);
+    });
+
+    if (picker.aqarandLocationPicker) {
+      registerMapController(picker.aqarandLocationPicker);
+    }
+  }
+
+  function parseDataCoordinate(value) {
+    if (typeof value === 'undefined' || value === null) {
+      return null;
+    }
+
+    var normalized = typeof value === 'string' ? value.trim() : value;
+    if (normalized === '') {
+      return null;
+    }
+
+    var num = Number.parseFloat(normalized);
+    return Number.isFinite(num) ? num : null;
+  }
+
+  function focusMapFromSelect($select, reason) {
+    if (!$select || !$select.length) {
+      return;
+    }
+
+    var $option = $select.find('option:selected');
+    if (!$option.length) {
+      return;
+    }
+
+    var lat = parseDataCoordinate($option.data('lat'));
+    var lng = parseDataCoordinate($option.data('lng'));
+
+    if (lat === null || lng === null) {
+      return;
+    }
+
+    withMap(function(controller) {
+      if (!controller || typeof controller.setCoordinate !== 'function') {
+        return;
+      }
+
+      if (reason === 'hydrate' && typeof controller.getCoordinate === 'function') {
+        var current = controller.getCoordinate();
+        if (current && current.lat !== null && current.lng !== null) {
+          return;
+        }
+      }
+
+      controller.setCoordinate(lat, lng, { pan: true });
+    });
+  }
+
+  $(function(){
+        bindMapController();
+
+    var i18n = CF_DEP.i18n || {};
+
+    $('.aqarand-location-widget').each(function(){
+      var $widget = $(this);
+      var $gov      = $widget.find('.cf-dep-governorate select');
+      var $city     = $widget.find('.cf-dep-city select');
+      var $district = $widget.find('.cf-dep-district select');
+
+      if (!$gov.length || !$city.length || !$district.length) {
+        console.warn('[CF_DEP] One or more select fields could not be found inside widget.', $widget.get(0));
+        return;
+      }
+
+      var hydration = {
+        city: $city.attr('data-selected') || $city.val() || '',
+        district: $district.attr('data-selected') || $district.val() || ''
+      };
+      var lastGovId = $gov.attr('data-selected') || $gov.val() || '';
+      var lastCityId = hydration.city;
+
+      if (!$city.children().length) {
+        fill($city, { '': { label: i18n.select_gov_first || '— Select Governorate First —' } });
+      }
+
+      if (!$district.children().length) {
+        fill($district, { '': { label: i18n.select_city_first || '— Select City First —' } });
+      }
+
+      // --- On Governorate Change ---
+      $gov.on('change', function(event, reason) {
+        clearError($widget);
+        var isHydrate = reason === 'hydrate';
+        var govId = $(this).val() || '';
+
+        if (!isHydrate && String(govId) === String(lastGovId)) {
+          return;
+        }
+        lastGovId = String(govId);
+
+        if (!isHydrate) {
+          hydration.city = '';
+          hydration.district = '';
+        }
+
+        if (!govId) {
+          fill($city, { '': { label: i18n.select_gov_first || '— Select Governorate First —' } });
+          fill($district, { '': { label: i18n.select_city_first || '— Select City First —' } });
+          return;
+        }
+
+        focusMapFromSelect($gov, reason);
+
+        fill($city, { '': { label: i18n.loading || '— Loading… —' } });
+        fill($district, { '': { label: i18n.select_city_first || '— Select City First —' } });
+
+        $.getJSON(CF_DEP.ajax_url, {
+          action: 'cf_dep_get_cities',
+          nonce: CF_DEP.nonce,
+          gov_id: govId,
+          lang: (CF_DEP.language || 'both')
+        })
+        .done(function(res) {
+          if (!res.success || !res.data || typeof res.data.options === 'undefined') {
+            showError('Invalid response from server when fetching cities.', $widget);
+            fill($city, { '': { label: i18n.error_loading_cities || '— Error —' } });
+            return;
+          }
+
+          if (Object.keys(res.data.options).length <= 1) {
+            showError(i18n.no_cities_found || 'No cities found for this governorate.', $widget);
+          }
+
+          fill($city, res.data.options);
+
+          var selectedCity = isHydrate ? hydration.city : '';
+          hydration.city = '';
+
+          if (selectedCity && setSelectedValue($city, selectedCity)) {
+            lastCityId = String(selectedCity);
+            $city.trigger('change', ['hydrate']);
+          } else {
+            lastCityId = '';
+            $city.val('');
+            $city.trigger('change');
+          }
+        })
+        .fail(function(xhr) {
+          var msg = (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message)
+                ? xhr.responseJSON.data.message
+                : 'Failed to fetch cities due to a server/network error.';
+          showError(msg, $widget);
+          fill($city, { '': { label: i18n.error_loading_cities || '— Error —' } });
+        });
+      });
+
+      // --- On City Change ---
+      $city.on('change', function(event, reason) {
+        clearError($widget);
+        var isHydrate = reason === 'hydrate';
+        var cityId = $(this).val() || '';
+
+        if (!isHydrate && String(cityId) === String(lastCityId)) {
+          return;
+        }
+        lastCityId = String(cityId);
+
+        if (!isHydrate) {
+          hydration.district = '';
+        }
+
+        if (!cityId) {
+          fill($district, { '': { label: i18n.select_city_first || '— Select City First —' } });
+          return;
+        }
+
+        focusMapFromSelect($city, reason);
+
+        fill($district, { '': { label: i18n.loading || '— Loading… —' } });
+
+        $.getJSON(CF_DEP.ajax_url, {
+          action: 'cf_dep_get_districts',
+          nonce: CF_DEP.nonce,
+          city_id: cityId,
+          lang: (CF_DEP.language || 'both')
+        })
+        .done(function(res) {
+          if (!res.success || !res.data || typeof res.data.options === 'undefined') {
+            showError('Invalid response from server when fetching districts.', $widget);
+            fill($district, { '': { label: i18n.error_loading_districts || '— Error —' } });
+            return;
+          }
+
+          if (Object.keys(res.data.options).length <= 1) {
+            showError(i18n.no_districts_found || 'No districts found for this city.', $widget);
+          }
+
+          fill($district, res.data.options);
+
+          var selectedDistrict = isHydrate ? hydration.district : '';
+          hydration.district = '';
+
+          if (selectedDistrict) {
+            setSelectedValue($district, selectedDistrict);
+          } else {
+            $district.val('');
+          }
+        })
+        .fail(function(xhr) {
+          var msg = (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message)
+                ? xhr.responseJSON.data.message
+                : 'Failed to fetch districts due to a server/network error.';
+          showError(msg, $widget);
+          fill($district, { '': { label: i18n.error_loading_districts || '— Error —' } });
+        });
+      });
+
+      $district.on('change', function(event, reason) {
+        focusMapFromSelect($district, reason);
+      });
+
+      var initialGov = $gov.attr('data-selected') || $gov.val();
+      var hasPreloadedCities = $city.children('option').length > 1;
+      var hasPreloadedDistricts = $district.children('option').length > 1;
+
+      if (initialGov) {
+        $gov.val(String(initialGov));
+
+        // If the cities (and possibly districts) are already rendered server-side,
+        // reuse them instead of refetching, and simply re-apply the saved choices.
+        if (hasPreloadedCities && (hydration.city || $city.val())) {
+          var appliedCity = hydration.city || $city.val();
+          if (setSelectedValue($city, appliedCity)) {
+            lastCityId = String(appliedCity);
+            // Ensure downstream handlers (district list + map focus) run even when options already exist.
+            $city.trigger('change', ['hydrate']);
+          }
+
+          if (hasPreloadedDistricts && (hydration.district || $district.val())) {
+            setSelectedValue($district, hydration.district || $district.val());
+            focusMapFromSelect($district, 'initial');
+          } else {
+            $city.trigger('change', ['hydrate']);
+          }
+        } else {
+          setTimeout(function(){
+            $gov.trigger('change', ['hydrate']);
+          }, 0);
+        }
+      }
+
+      withMap(function(controller) {
+        if (controller && typeof controller.getCoordinate === 'function') {
+          var current = controller.getCoordinate();
+          if (current && current.lat !== null && current.lng !== null) {
+            return;
+          }
+        }
+
+        if ($district.val()) {
+          focusMapFromSelect($district, 'initial');
+        } else if ($city.val()) {
+          focusMapFromSelect($city, 'initial');
+        } else if ($gov.val()) {
+          focusMapFromSelect($gov, 'initial');
+        }
+      });
+    });
+  });
+})(jQuery);

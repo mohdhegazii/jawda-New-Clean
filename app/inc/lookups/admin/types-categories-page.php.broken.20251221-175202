@@ -1,0 +1,2047 @@
+<?php
+/**
+ * Admin page for managing the 4-level Hegzz Lookups system and Aliases.
+ */
+
+if (!defined('ABSPATH')) exit;
+
+
+if (!class_exists('WP_List_Table')) {
+    require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
+}
+
+function hegzz_lookups_enqueue_admin_assets($hook) {
+    if ($hook === 'toplevel_page_hegzz-lookups' || (isset($_GET['page']) && $_GET['page'] === 'hegzz-lookups-types')) {
+        wp_enqueue_style('bootstrap-icons', 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css', [], '1.11.3');
+    }
+}
+add_action('admin_enqueue_scripts', 'hegzz_lookups_enqueue_admin_assets');
+
+// -- LIST TABLE CLASSES --
+class Hegzz_Base_Lookup_List_Table extends WP_List_Table {
+    protected $tab = '';
+
+    function get_bulk_actions() {
+        return [
+            'activate' => __('Activate', 'aqarand'),
+            'deactivate' => __('Deactivate', 'aqarand'),
+            'delete' => __('Delete', 'aqarand'),
+        ];
+    }
+
+    protected function render_status($item) {
+        return !empty($item['is_active']) ? '<span class="status-active">Active</span>' : '<span class="status-inactive">Inactive</span>';
+    }
+
+    function column_cb($item) { return sprintf('<input type="checkbox" name="ids[]" value="%s" />', $item['id']); }
+    function column_icon_class($item) { return !empty($item['icon_class']) ? '<i class="' . esc_attr($item['icon_class']) . '"></i>' : '—'; }
+    function column_sort_order($item) { return isset($item['sort_order']) ? intval($item['sort_order']) : 0; }
+    function column_is_active($item) { return $this->render_status($item); }
+}
+
+class Hegzz_Categories_List_Table extends Hegzz_Base_Lookup_List_Table {
+    protected $tab = 'categories';
+    function __construct() { parent::__construct(['singular' => 'Category', 'plural' => 'Categories', 'ajax' => false]); }
+    function get_columns() { return ['cb' => '<input type="checkbox" />', 'icon_class' => __('Icon', 'aqarand'), 'name_en' => 'Name (EN)', 'name_ar' => 'Name (AR)', 'sort_order' => 'Sort', 'is_active' => 'Status']; }
+    function prepare_items() { $this->_column_headers = [$this->get_columns(), [], []]; $is_active = (isset($_GET[$this->tab . '_active']) && $_GET[$this->tab . '_active'] !== '') ? (int)$_GET[$this->tab . '_active'] : 1;
+        $this->items = Hegzz_Lookups_Service::get_all_categories();
+        $this->items = array_values(array_filter((array)$this->items, function($r) use ($is_active) {
+            return (int)($r['is_active'] ?? 0) === (int)$is_active;
+        }));
+        }
+    function column_default($item, $column_name) { return isset($item[$column_name]) ? esc_html($item[$column_name]) : ''; }
+    function column_name_en($item) {
+        $actions = [
+            'edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=categories&action=edit&id=%s">Edit</a>', $item['id']),
+            'quick_edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=categories&action=quick-edit&id=%s">Quick Edit</a>', $item['id']),
+            'delete' => sprintf('<a href="%s">Delete</a>', esc_url(add_query_arg(array_merge((array)$_GET, [
+                'page' => 'hegzz-lookups-types',
+                'tab' => 'categories',
+                'action' => 'delete',
+                'id' => (int)$item['id'],
+                '_wpnonce' => wp_create_nonce('hegzz_delete_lookup'),
+            ]), admin_url('admin.php')))),
+        ];
+        return sprintf('<strong>%s</strong>%s', esc_html($item['name_en']), $this->row_actions($actions));
+    }
+}
+
+class Hegzz_Usages_List_Table extends Hegzz_Base_Lookup_List_Table {
+    protected $tab = 'usages';
+    function __construct() { parent::__construct(['singular' => 'Usage', 'plural' => 'Usages', 'ajax' => false]); }
+    function get_columns() { return ['cb' => '<input type="checkbox" />', 'icon_class' => __('Icon', 'aqarand'), 'name_en' => 'Name (EN)', 'name_ar' => 'Name (AR)', 'sort_order' => 'Sort', 'is_active' => 'Status']; }
+    function prepare_items() { $this->_column_headers = [$this->get_columns(), [], []]; $is_active = (isset($_GET[$this->tab . '_active']) && $_GET[$this->tab . '_active'] !== '') ? (int)$_GET[$this->tab . '_active'] : 1;
+        $this->items = Hegzz_Lookups_Service::get_all_usages();
+        $this->items = array_values(array_filter((array)$this->items, function($r) use ($is_active) {
+            return (int)($r['is_active'] ?? 0) === (int)$is_active;
+        }));
+        }
+    function column_default($item, $column_name) { return isset($item[$column_name]) ? esc_html($item[$column_name]) : ''; }
+    function column_name_en($item) {
+        $actions = [
+            'edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=usages&action=edit&id=%s">Edit</a>', $item['id']),
+            'quick_edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=usages&action=quick-edit&id=%s">Quick Edit</a>', $item['id']),
+            'delete' => sprintf('<a href="%s">Delete</a>', esc_url(add_query_arg(array_merge((array)$_GET, [
+                'page' => 'hegzz-lookups-types',
+                'tab' => 'usages',
+                'action' => 'delete',
+                'id' => (int)$item['id'],
+                '_wpnonce' => wp_create_nonce('hegzz_delete_lookup'),
+            ]), admin_url('admin.php')))),
+        ];
+        return sprintf('<strong>%s</strong>%s', esc_html($item['name_en']), $this->row_actions($actions));
+    }
+}
+
+class Hegzz_Property_Types_List_Table extends Hegzz_Base_Lookup_List_Table {
+    protected $tab = 'property-types';
+
+    function __construct() {
+        parent::__construct(['singular' => 'Property Type', 'plural' => 'Property Types', 'ajax' => false]);
+    }
+
+    function get_columns() {
+        return [
+            'cb' => '<input type="checkbox" />',
+            'icon_class' => __('Icon', 'aqarand'),
+            'name_en' => 'Name (EN)',
+            'name_ar' => 'Name (AR)',
+            'categories' => 'Categories',
+            'usages' => 'Usages',
+            'sort_order' => 'Sort',
+            'is_active' => 'Status'
+        ];
+    }
+
+    protected function get_sortable_columns() {
+        return [];
+    }
+
+    public function get_bulk_actions() {
+        return [
+            'edit' => __('Edit', 'aqarand'),
+            'activate' => __('Activate', 'aqarand'),
+            'deactivate' => __('Deactivate', 'aqarand'),
+            'delete' => __('Delete', 'aqarand'),
+        ];
+    }
+
+    public function extra_tablenav($which) {
+        global $wpdb;
+
+        if ($which !== 'top') return;
+
+        $cats = $wpdb->get_results(
+            "SELECT id, name_en, name_ar FROM {$wpdb->prefix}hegzz_categories WHERE is_active=1 ORDER BY sort_order ASC, id ASC",
+            ARRAY_A
+        );
+
+        $f_cat = isset($_REQUEST['pt_category_id']) ? (int)$_REQUEST['pt_category_id'] : 0;
+        $is_bulk_edit = ($this->current_action() === 'edit');
+        ?>
+        <div class="alignleft actions" style="padding:8px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+
+            <!-- Filter: Category -->
+            <select name="pt_category_id">
+                <option value="0"><?php echo esc_html__('Category (All)', 'aqarand'); ?></option>
+                <?php foreach ($cats as $c): ?>
+                    <option value="<?php echo (int)$c['id']; ?>" <?php selected($f_cat, (int)$c['id']); ?>>
+                        <?php echo esc_html(($c['name_en'] ?: $c['name_ar'])); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+
+            <?php submit_button(__('Filter'), 'secondary', 'filter_action', false); ?>
+            <a class="button" href="<?php echo esc_url(remove_query_arg(['pt_category_id','paged'])); ?>">
+                <?php echo esc_html__('Reset', 'aqarand'); ?>
+            </a>
+
+            <?php if ($is_bulk_edit): ?>
+                <span style="margin-left:12px; font-weight:600;"><?php echo esc_html__('Bulk Edit: Categories', 'aqarand'); ?></span>
+
+                <select name="bulk_category_ids[]" multiple size="6" style="min-width:280px;">
+                    <?php foreach ($cats as $c): ?>
+                        <option value="<?php echo (int)$c['id']; ?>">
+                            <?php echo esc_html(($c['name_en'] ?: $c['name_ar'])); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <input type="hidden" name="bulk_update" value="1" />
+                <?php submit_button(__('Update'), 'primary', 'bulk_update_btn', false); ?>
+            <?php endif; ?>
+
+        </div>
+        <?php
+    }
+
+    public function process_bulk_action() {
+        $raw_ids = $_REQUEST['bulk_ids'] ?? ($_REQUEST['ids'] ?? ($_REQUEST['id'] ?? []));
+        $ids = array_values(array_unique(array_map('intval', (array)$raw_ids)));
+        $ids = array_filter($ids, function($v){ return $v > 0; });
+
+        if ($this->current_action() !== 'edit') return;
+        if (!current_user_can('manage_options')) return;
+
+        $do_update = isset($_REQUEST['bulk_update']) && (string)$_REQUEST['bulk_update'] === '1';
+        if (!$do_update) return;
+
+        check_admin_referer('bulk-' . $this->_args['plural']);
+
+        $ids = [];
+        if (!empty($_REQUEST['id'])) $ids = array_merge($ids, (array)$_REQUEST['id']);
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn($v)=>$v>0)));
+        if (!$ids) return;
+
+        $cat_ids = isset($_REQUEST['bulk_category_ids']) ? (array)$_REQUEST['bulk_category_ids'] : [];
+        $cat_ids = array_values(array_unique(array_filter(array_map('intval', $cat_ids), fn($v)=>$v>0)));
+
+        global $wpdb;
+        $t_ptc = $wpdb->prefix . 'hegzz_property_type_categories';
+
+        foreach ($ids as $pt_id) {
+            $wpdb->delete($t_ptc, ['property_type_id' => (int)$pt_id]);
+
+            $sort = 0;
+            foreach ($cat_ids as $cid) {
+                $wpdb->insert($t_ptc, [
+                    'property_type_id' => (int)$pt_id,
+                    'category_id'      => (int)$cid,
+                    'sort_order'       => $sort++,
+                    'is_active'        => 1,
+                    'created_at'       => current_time('mysql'),
+                    'updated_at'       => current_time('mysql'),
+                ]);
+            }
+        }
+
+        wp_cache_flush();
+        wp_safe_redirect(remove_query_arg(['action','action2','bulk_update','bulk_category_ids','_wpnonce','paged']));
+        exit;
+    }
+
+    public function prepare_items() {
+        global $wpdb;
+
+        $this->process_bulk_action();
+
+        $per_page = 20;
+        $paged = isset($_REQUEST['paged']) ? max(1, (int)$_REQUEST['paged']) : 1;
+        $offset = ($paged - 1) * $per_page;
+
+        $t_pt  = $wpdb->prefix . 'hegzz_property_types';
+        $t_ptc = $wpdb->prefix . 'hegzz_property_type_categories';
+        $t_ptu = $wpdb->prefix . 'hegzz_property_type_usages';
+        $t_cat = $wpdb->prefix . 'hegzz_categories';
+        $t_usg = $wpdb->prefix . 'hegzz_usages';
+
+        $f_cat = isset($_REQUEST['pt_category_id']) ? (int)$_REQUEST['pt_category_id'] : 0;
+
+        if ($f_cat > 0) {
+            $total_items = (int)$wpdb->get_var($wpdb->prepare("
+                SELECT COUNT(DISTINCT pt.id)
+                FROM {$t_pt} pt
+                INNER JOIN {$t_ptc} ptc ON ptc.property_type_id=pt.id AND ptc.is_active=1
+                WHERE ptc.category_id=%d AND pt.is_active=1 AND pt.is_active=1
+            ", $f_cat));
+
+            $items = $wpdb->get_results($wpdb->prepare("
+                SELECT DISTINCT pt.*
+                FROM {$t_pt} pt
+                INNER JOIN {$t_ptc} ptc ON ptc.property_type_id=pt.id AND ptc.is_active=1
+                WHERE ptc.category_id = %d AND pt.is_active=1
+                ORDER BY pt.sort_order ASC, pt.id ASC
+                LIMIT %d OFFSET %d
+            ", $f_cat, $per_page, $offset), ARRAY_A);
+        } else {
+            $total_items = (int)$wpdb->get_var("SELECT COUNT(*) FROM {$t_pt}");
+
+            $items = $wpdb->get_results($wpdb->prepare("
+                SELECT pt.*
+                FROM {$t_pt} pt
+WHERE pt.is_active=1
+                ORDER BY pt.sort_order ASC, pt.id ASC
+                LIMIT %d OFFSET %d
+            ", $per_page, $offset), ARRAY_A);
+        }
+
+        if (!is_array($items)) $items = [];
+
+        // attach category_names + usage_names for current page
+        $ids = array_values(array_unique(array_map(fn($r)=>(int)$r['id'], $items)));
+        if (!empty($ids)) {
+            $place = implode(',', array_fill(0, count($ids), '%d'));
+
+            $rows = $wpdb->get_results($wpdb->prepare("
+                SELECT ptc.property_type_id, c.name_en, c.name_ar
+                FROM {$t_ptc} ptc
+                INNER JOIN {$t_cat} c ON c.id=ptc.category_id
+                WHERE ptc.is_active=1 AND ptc.property_type_id IN ({$place})
+                ORDER BY ptc.sort_order ASC, ptc.category_id ASC
+            ", ...$ids), ARRAY_A);
+
+            $cat_map = [];
+            foreach ($rows as $r) {
+                $pid = (int)$r['property_type_id'];
+                $cat_map[$pid][] = ($r['name_en'] ?: $r['name_ar']);
+            }
+
+            $rows = $wpdb->get_results($wpdb->prepare("
+                SELECT ptu.property_type_id, u.name_en, u.name_ar
+                FROM {$t_ptu} ptu
+                INNER JOIN {$t_usg} u ON u.id=ptu.usage_id
+                WHERE ptu.property_type_id IN ({$place})
+                ORDER BY ptu.usage_id ASC
+            ", ...$ids), ARRAY_A);
+
+            $usg_map = [];
+            foreach ($rows as $r) {
+                $pid = (int)$r['property_type_id'];
+                $usg_map[$pid][] = ($r['name_en'] ?: $r['name_ar']);
+            }
+
+            foreach ($items as &$it) {
+                $pid = (int)$it['id'];
+                $it['category_names'] = $cat_map[$pid] ?? [];
+                $it['usage_names']    = $usg_map[$pid] ?? [];
+            }
+        }
+
+        $this->_column_headers = [$this->get_columns(), [], $this->get_sortable_columns()];
+        $this->items = $items;
+
+        $this->set_pagination_args([
+            'total_items' => $total_items,
+            'per_page'    => $per_page,
+            'total_pages' => max(1, (int)ceil($total_items / $per_page)),
+        ]);
+    }
+
+    public function column_default($item, $column_name) {
+        if ($column_name === 'categories') {
+            $names = $item['category_names'] ?? [];
+            return !empty($names) ? esc_html(implode(', ', $names)) : '—';
+        }
+        if ($column_name === 'usages') {
+            $names = $item['usage_names'] ?? [];
+            return !empty($names) ? esc_html(implode(', ', $names)) : '—';
+        }
+
+        if (isset($item[$column_name])) {
+            return esc_html((string)$item[$column_name]);
+        }
+        return '—';
+    }
+
+
+        public function column_cb($item) {
+            $id = isset($item['id']) ? (int)$item['id'] : 0;
+            return sprintf('<input type="checkbox" name="bulk_ids[]" value="%d" />', $id);
+        }
+
+
+        public function column_name_en($item) {
+            $id = isset($item['id']) ? (int)$item['id'] : 0;
+
+            $edit = add_query_arg([
+                'page' => 'hegzz-lookups-types',
+                'tab'  => 'property-types',
+                'action' => 'edit',
+                'id' => $id,
+            ], admin_url('admin.php'));
+
+            $delete = add_query_arg([
+                'page' => 'hegzz-lookups-types',
+                'tab'  => 'property-types',
+                'action' => 'delete',
+                'id' => $id,
+                '_wpnonce' => wp_create_nonce('hegzz_delete_lookup'),
+            ], admin_url('admin.php'));
+
+            
+        // Build URLs preserving current filters (pt_category_id, paged, etc.)
+        $base = hegzz_lookups_current_url();
+
+        $edit_url = add_query_arg([
+            'page'   => 'hegzz-lookups-types',
+            'tab'    => 'property-types',
+            'action' => 'edit',
+            'id'     => (int) $item['id'],
+        ], $base);
+
+        $delete_url = add_query_arg([
+            'page'    => 'hegzz-lookups-types',
+            'tab'     => 'property-types',
+            'action'  => 'delete',
+            'id'      => (int) $item['id'],
+            '_wpnonce'=> wp_create_nonce('hegzz_delete_lookup'),
+        ], $base);
+
+        $actions = [
+            'edit'   => '<a href="' . esc_url($edit_url) . '">Edit</a>',
+            'delete' => '<a href="' . esc_url($delete_url) . '" onclick="return confirm(\'Are you sure?\')">Delete</a>',
+        ];
+$val = isset($item['name_en']) ? (string)$item['name_en'] : '';
+            return sprintf('<strong>%s</strong>%s', esc_html($val), $this->row_actions($actions));
+        }
+
+}
+
+
+class Hegzz_Sub_Properties_List_Table extends Hegzz_Base_Lookup_List_Table {
+    protected $tab = 'sub-properties';
+    private $property_types_map = [];
+    function __construct() { parent::__construct(['singular' => 'Sub-Property', 'plural' => 'Sub-Properties', 'ajax' => false]); }
+    function get_columns() { return ['cb' => '<input type="checkbox" />', 'icon_class' => __('Icon', 'aqarand'), 'name_en' => 'Name (EN)', 'name_ar' => 'Name (AR)', 'parent_type' => 'Parent Property Type', 'sort_order' => 'Sort', 'is_active' => 'Status']; }
+    function prepare_items() {
+        $this->_column_headers = [$this->get_columns(), [], []];
+        $this->items = Hegzz_Lookups_Service::get_all_sub_properties();
+        $this->property_types_map = wp_list_pluck(Hegzz_Lookups_Service::get_all_property_types(['is_active' => 1]), 'name_en', 'id');
+    }
+    function column_default($item, $column_name) { return isset($item[$column_name]) ? esc_html($item[$column_name]) : ''; }
+    function column_name_en($item) {
+        $actions = [
+            'edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=sub-properties&action=edit&id=%s">Edit</a>', $item['id']),
+            'quick_edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=sub-properties&action=quick-edit&id=%s">Quick Edit</a>', $item['id']),
+            'delete' => sprintf('<a href="%s">Delete</a>', esc_url(add_query_arg(array_merge((array)$_GET, [
+                'page' => 'hegzz-lookups-types',
+                'tab' => 'sub-properties',
+                'action' => 'delete',
+                'id' => (int)$item['id'],
+                '_wpnonce' => wp_create_nonce('hegzz_delete_lookup'),
+            ]), admin_url('admin.php')))),
+        ];
+        return sprintf('<strong>%s</strong>%s', esc_html($item['name_en']), $this->row_actions($actions));
+    }
+    function column_parent_type($item) { return isset($item['property_type_id']) ? esc_html($this->property_types_map[$item['property_type_id']] ?? 'N/A') : 'N/A'; }
+}
+
+class Hegzz_Aliases_List_Table extends WP_List_Table {
+    function __construct() { parent::__construct(['singular' => 'Alias', 'plural' => 'Aliases', 'ajax' => false]); }
+    function get_columns() { return ['cb' => '<input type="checkbox" />', 'name_en' => 'Name (EN)', 'name_ar' => 'Name (AR)', 'sub_property' => 'Sub-Property', 'project' => 'Project']; }
+    function get_bulk_actions() { return ['delete' => __('Delete', 'aqarand')]; }
+    function prepare_items() { $this->_column_headers = [$this->get_columns(), [], []]; $this->items = Hegzz_Lookups_Service::get_all_aliases(['is_deleted' => 0]); }
+    function column_default($item, $column_name) { return esc_html($item[$column_name]); }
+    function column_cb($item) { return sprintf('<input type="checkbox" name="ids[]" value="%s" />', $item['id']); }
+    function column_name_en($item) {
+        $actions = [
+            'edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=aliases&action=edit&id=%s">Edit</a>', $item['id']),
+            'quick_edit' => sprintf('<a href="?page=hegzz-lookups-types&tab=aliases&action=quick-edit&id=%s">Quick Edit</a>', $item['id']),
+            'delete' => sprintf('<a href="%s">Delete</a>', esc_url(add_query_arg(array_merge((array)$_GET, [
+                'page' => 'hegzz-lookups-types',
+                'tab' => 'aliases',
+                'action' => 'delete',
+                'id' => (int)$item['id'],
+                '_wpnonce' => wp_create_nonce('hegzz_delete_lookup'),
+            ]), admin_url('admin.php'))))
+        ];
+        return sprintf('<strong>%s</strong>%s', esc_html($item['name_en']), $this->row_actions($actions));
+    }
+    function column_sub_property($item) { $sub = Hegzz_Lookups_Service::get_sub_property($item['sub_property_id']); return $sub ? esc_html($sub['name_en']) : 'N/A'; }}
+
+// --- PAGE RENDERING & FORM HANDLING ---
+
+function hegzz_lookups_get_entity_map() {
+    return [
+        'categories' => 'category',
+        'property-types' => 'property_type',
+        'sub-properties' => 'sub_property',
+        
+        'property-models' => 'property_model',
+'usages' => 'usage',
+        'aliases' => 'alias',
+    ];
+}
+
+/* === AUTO: Property Models List Table (RESTORE TABLE) === */
+if (!class_exists('Hegzz_Property_Models_List_Table') && class_exists('Hegzz_Base_Lookup_List_Table')) {
+
+    class Hegzz_Property_Models_List_Table extends Hegzz_Base_Lookup_List_Table {
+
+        public function get_columns() {
+            return [
+                'cb' => '<input type="checkbox" />',
+                'id' => 'ID',
+                'name_en' => 'Name (EN)',
+                'name_ar' => 'Name (AR)',
+                'bedrooms' => 'Bedrooms',
+                'is_active' => 'Status',
+            ];
+        }
+
+        protected function get_sortable_columns() {
+            return [
+                'id' => ['id', false],
+                'name_en' => ['name_en', false],
+            ];
+        }
+
+        public function column_cb($item) {
+            $id = isset($item['id']) ? (int)$item['id'] : 0;
+            return sprintf('<input type="checkbox" name="bulk_ids[]" value="%d" />', $id);
+        }
+
+        public function column_name_en($item) {
+            $id = isset($item['id']) ? (int)$item['id'] : 0;
+
+            $edit = add_query_arg([
+                'page' => 'hegzz-lookups-types',
+                'tab' => 'property-models',
+                'action' => 'edit',
+                'id' => $id,
+            ], admin_url('admin.php'));
+
+            $delete = add_query_arg(array_merge((array)$_GET, [
+                'page' => 'hegzz-lookups-types',
+                'tab' => 'property-models',
+                'action' => 'delete',
+                'id' => $id,
+                '_wpnonce' => wp_create_nonce('hegzz_delete_lookup'),
+            ]), admin_url('admin.php'));
+
+            $actions = [
+                'edit' => sprintf('<a href="%s">Edit</a>', esc_url($edit)),
+                'delete' => sprintf('<a href="%s" onclick="return confirm(\'Delete?\')">Delete</a>', esc_url($delete)),
+            ];
+
+            $val = isset($item['name_en']) ? $item['name_en'] : '';
+            return sprintf('%s %s', esc_html($val), $this->row_actions($actions));
+        }
+
+        public function column_id($item) {
+            return isset($item['id']) ? (int)$item['id'] : '';
+        }
+
+        public function column_name_ar($item) {
+            return isset($item['name_ar']) ? esc_html($item['name_ar']) : '';
+        }
+
+        public function column_bedrooms($item) {
+            return isset($item['bedrooms']) ? (int)$item['bedrooms'] : 0;
+        }
+
+        public function column_is_active($item) {
+            $v = isset($item['is_active']) ? (int)$item['is_active'] : 0;
+            return $v ? 'Active' : 'Inactive';
+        }
+
+        public function prepare_items() {
+            global $wpdb;
+
+            $per_page = 20;
+            $paged = $this->get_pagenum();
+            $offset = ($paged - 1) * $per_page;
+
+            $search    = isset($_REQUEST['pm_search']) ? sanitize_text_field(wp_unslash($_REQUEST['pm_search'])) : '';
+            $is_active = (isset($_REQUEST['pm_active']) && $_REQUEST['pm_active'] !== '') ? (int)$_REQUEST['pm_active'] : null;
+            $bedrooms  = (isset($_REQUEST['pm_bedrooms']) && $_REQUEST['pm_bedrooms'] !== '') ? (int)$_REQUEST['pm_bedrooms'] : null;
+
+            $cat_id = isset($_REQUEST['pm_category_id']) ? (int)$_REQUEST['pm_category_id'] : 0;
+            $pt_id  = isset($_REQUEST['pm_property_type_id']) ? (int)$_REQUEST['pm_property_type_id'] : 0;
+            $sp_id  = isset($_REQUEST['pm_sub_property_id']) ? (int)$_REQUEST['pm_sub_property_id'] : 0;
+
+            $t_models = $wpdb->prefix . 'hegzz_property_models';
+            $t_pmc    = $wpdb->prefix . 'hegzz_property_model_categories';
+
+            $where = "1=1";
+            $params = [];
+
+            if ($is_active !== null) { $where .= " AND m.is_active=%d"; $params[] = (int)$is_active; }
+
+            if ($search !== '') {
+                $where .= " AND (m.name_ar LIKE %s OR m.name_en LIKE %s OR m.slug LIKE %s)";
+                $like = '%' . $wpdb->esc_like($search) . '%';
+                $params[] = $like; $params[] = $like; $params[] = $like;
+            }
+
+            if ($bedrooms !== null) { $where .= " AND m.bedrooms=%d"; $params[] = (int)$bedrooms; }
+            if ($pt_id > 0) { $where .= " AND m.property_type_id=%d"; $params[] = (int)$pt_id; }
+            if ($sp_id > 0) { $where .= " AND m.sub_property_id=%d"; $params[] = (int)$sp_id; }
+
+            $join = "";
+            if ($cat_id > 0) {
+                $join = " INNER JOIN {$t_pmc} pmc ON pmc.property_model_id=m.id ";
+                $where .= " AND pmc.category_id=%d";
+                $params[] = (int)$cat_id;
+            }
+
+            // Count
+            $sqlc = "SELECT COUNT(DISTINCT m.id) FROM {$t_models} m {$join} WHERE {$where}";
+            $total_items = $params ? (int)$wpdb->get_var($wpdb->prepare($sqlc, ...$params)) : (int)$wpdb->get_var($sqlc);
+
+            // Page items
+            $sql = "SELECT DISTINCT m.* FROM {$t_models} m {$join} WHERE {$where} ORDER BY m.id DESC LIMIT %d OFFSET %d";
+            $params2 = array_merge($params, [$per_page, $offset]);
+            $items = $wpdb->get_results($wpdb->prepare($sql, ...$params2), ARRAY_A);
+
+            // Attach categories to each item (for rendering)
+            if (!empty($items)) {
+                $ids = array_map(function($r){ return (int)$r['id']; }, $items);
+                $place = implode(',', array_fill(0, count($ids), '%d'));
+                $q = $wpdb->prepare("SELECT property_model_id, category_id FROM {$t_pmc} WHERE property_model_id IN ({$place})", ...$ids);
+                $pairs = $wpdb->get_results($q, ARRAY_A);
+                $map = [];
+                foreach ($pairs as $p2) {
+                    $mid = (int)$p2['property_model_id'];
+                    if (!isset($map[$mid])) $map[$mid] = [];
+                    $map[$mid][] = (int)$p2['category_id'];
+                }
+                foreach ($items as &$it) {
+                    $it['category_ids'] = $map[(int)$it['id']] ?? [];
+                }
+                unset($it);
+            }
+
+            $this->_column_headers = [$this->get_columns(), [], $this->get_sortable_columns()];
+            $this->items = is_array($items) ? $items : [];
+
+            $this->set_pagination_args([
+                'total_items' => $total_items,
+                'per_page'    => $per_page,
+                'total_pages' => max(1, (int)ceil($total_items / $per_page)),
+            ]);
+        }
+
+    
+
+        public function extra_tablenav($which) {
+            if ($which !== 'top') return;
+
+            global $wpdb;
+
+            $f_cat = isset($_REQUEST['pm_category_id']) ? (int)$_REQUEST['pm_category_id'] : 0;
+            $f_pt  = isset($_REQUEST['pm_property_type_id']) ? (int)$_REQUEST['pm_property_type_id'] : 0;
+            $f_sp  = isset($_REQUEST['pm_sub_property_id']) ? (int)$_REQUEST['pm_sub_property_id'] : 0;
+
+            $f_search = isset($_REQUEST['pm_search']) ? sanitize_text_field(wp_unslash($_REQUEST['pm_search'])) : '';
+            $f_active = (isset($_REQUEST['pm_active']) && $_REQUEST['pm_active'] !== '') ? (int)$_REQUEST['pm_active'] : null;
+            $f_bedrooms = (isset($_REQUEST['pm_bedrooms']) && $_REQUEST['pm_bedrooms'] !== '') ? (int)$_REQUEST['pm_bedrooms'] : null;
+
+            $cats = $wpdb->get_results("SELECT id, name_en, name_ar FROM {$wpdb->prefix}hegzz_categories WHERE is_active=1 ORDER BY sort_order ASC, id ASC", ARRAY_A);
+            $pts  = $wpdb->get_results("SELECT id, name_en, name_ar FROM {$wpdb->prefix}hegzz_property_types WHERE is_active=1 ORDER BY sort_order ASC, id ASC", ARRAY_A);
+
+            if ($f_pt > 0) {
+                $subs = $wpdb->get_results($wpdb->prepare(
+                    "SELECT id, name_en, name_ar FROM {$wpdb->prefix}hegzz_sub_properties WHERE is_active=1 AND property_type_id=%d ORDER BY sort_order ASC, id ASC",
+                    $f_pt
+                ), ARRAY_A);
+            } else {
+                $subs = $wpdb->get_results("SELECT id, name_en, name_ar FROM {$wpdb->prefix}hegzz_sub_properties WHERE is_active=1 ORDER BY sort_order ASC, id ASC", ARRAY_A);
+            }
+
+            ?>
+            <div class="alignleft actions" style="padding:8px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <input type="text" name="pm_search" value="<?php echo esc_attr($f_search); ?>" placeholder="Search (name/slug)..." class="regular-text" style="max-width:260px;" />
+
+                <select name="pm_category_id" id="hegzz_pm_category_ids_filter">
+                    <option value="0">Category (All)</option>
+                    <?php foreach ($cats as $c): ?>
+                        <option value="<?php echo (int)$c['id']; ?>" <?php selected($f_cat, (int)$c['id']); ?>>
+                            <?php echo esc_html(($c['name_en'] ?: $c['name_ar'])); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <select name="pm_property_type_id" id="hegzz_pm_property_type_id_filter">
+                    <option value="0">Property Type (All)</option>
+                    <?php foreach ($pts as $pt): ?>
+                        <option value="<?php echo (int)$pt['id']; ?>" <?php selected($f_pt, (int)$pt['id']); ?>>
+                            <?php echo esc_html(($pt['name_en'] ?: $pt['name_ar'])); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <select name="pm_sub_property_id" id="hegzz_pm_sub_property_id_filter">
+                    <option value="0">Sub-Property (All)</option>
+                    <?php foreach ($subs as $sp): ?>
+                        <option value="<?php echo (int)$sp['id']; ?>" <?php selected($f_sp, (int)$sp['id']); ?>>
+                            <?php echo esc_html(($sp['name_en'] ?: $sp['name_ar'])); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <select name="pm_bedrooms">
+                    <option value="">Bedrooms (All)</option>
+                    <?php foreach ([0,1,2,3,4,5] as $b): ?>
+                      <option value="<?php echo esc_attr($b); ?>" <?php selected((string)$f_bedrooms, (string)$b); ?>>
+                        <?php echo esc_html($b); ?>
+                      </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <select name="pm_active">
+                    <option value="">Status (All)</option>
+                    <option value="1" <?php selected((string)$f_active, "1"); ?>>Active</option>
+                    <option value="0" <?php selected((string)$f_active, "0"); ?>>Inactive</option>
+                </select>
+
+                <?php submit_button(__('Filter'), 'secondary', 'filter_action', false); ?>
+                <a class="button" href="<?php echo esc_url(hegzz_pm_admin_url([], false)); ?>">Reset</a>
+            </div>
+            <?php
+        }
+
+}
+}
+
+
+
+
+/**
+ * Build a stable admin.php URL for the Property Models tab while preserving allowed filters.
+ */
+function hegzz_pm_admin_url($overrides = [], $keep_filters = true) {
+    $allowed = [
+        'pm_search',
+        'pm_category_id',
+        'pm_property_type_id',
+        'pm_sub_property_id',
+        'pm_bedrooms',
+        'pm_active',
+        'paged',
+        'orderby',
+        'order',
+    ];
+
+    $q = [];
+    if ($keep_filters) {
+        foreach ($allowed as $k) {
+            if (isset($_GET[$k]) && $_GET[$k] !== '') {
+                $q[$k] = wp_unslash($_GET[$k]);
+            }
+        }
+    }
+
+    // Always force correct page/tab
+    $q['page'] = 'hegzz-lookups-types';
+    $q['tab']  = 'property-models';
+
+    // Apply overrides (null means unset)
+    foreach ((array)$overrides as $k => $v) {
+        if ($v === null) {
+            unset($q[$k]);
+        } else {
+            $q[$k] = $v;
+        }
+    }
+
+    return add_query_arg($q, admin_url('admin.php'));
+}
+
+
+
+/**
+ * Build admin URL for lookups tabs and preserve current filters in query string.
+ * @param string $tab
+ * @param array $overrides
+ * @param bool $keep_current
+ */
+function hegzz_lookups_admin_url($tab, $overrides = [], $keep_current = true) {
+    $q = [];
+    if ($keep_current) {
+        $q = (array) $_GET;
+    }
+
+    $q['page'] = 'hegzz-lookups-types';
+    $q['tab']  = $tab;
+
+    foreach ((array)$overrides as $k => $v) {
+        if ($v === null) unset($q[$k]);
+        else $q[$k] = $v;
+    }
+
+    return add_query_arg($q, admin_url('admin.php'));
+}
+
+function hegzz_lookups_render_filters($tab) {
+    // Property Models already has filters in list table extra_tablenav + custom needs,
+    // but we still can render a GET filter bar for consistency if you want.
+    if ($tab === 'property-models') {
+        return;
+    }
+
+    // Generic filters: search + active (you can extend per tab)
+    $search_key = $tab . '_search';
+    $active_key = $tab . '_active';
+
+    $f_search = isset($_GET[$search_key]) ? sanitize_text_field(wp_unslash($_GET[$search_key])) : '';
+    $f_active = (isset($_GET[$active_key]) && $_GET[$active_key] !== '') ? (int) $_GET[$active_key] : 1;
+
+    echo '<form method="get" action="' . esc_url(admin_url('admin.php')) . '" style="margin:10px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">';
+    echo '<input type="hidden" name="page" value="hegzz-lookups-types" />';
+    echo '<input type="hidden" name="tab" value="' . esc_attr($tab) . '" />';
+
+    echo '<input type="text" name="' . esc_attr($search_key) . '" value="' . esc_attr($f_search) . '" placeholder="Search..." class="regular-text" style="max-width:260px;" />';
+
+    echo '<select name="' . esc_attr($active_key) . '">';
+    echo '<option value="">Status (All)</option>';
+    echo '<option value="1" ' . selected((string)$f_active, "1", false) . '>Active</option>';
+    echo '<option value="0" ' . selected((string)$f_active, "0", false) . '>Inactive</option>';
+    echo '</select>';
+
+    submit_button(__('Filter'), 'secondary', 'filter_action', false);
+    echo '<a class="button" href="' . esc_url(hegzz_lookups_admin_url($tab, [
+        $search_key => null,
+        $active_key => null,
+        'paged' => null,
+    ], true)) . '">Reset</a>';
+
+    echo '</form>';
+}
+
+
+
+/**
+ * === LOOKUPS URL + REDIRECT HELPERS (UNIFIED) ===
+ * Keeps filters + paged across row actions and redirects (like Property Models).
+ */
+function hegzz_lookups_current_request_uri() {
+    $uri = (is_string($_SERVER['REQUEST_URI'] ?? '') ? wp_unslash($_SERVER['REQUEST_URI']) : '');
+    return $uri ?: '';
+}
+
+function hegzz_lookups_action_url(array $overrides = []) {
+    // Inherit current GET (filters + paged) then override.
+    $q = array_merge((array)$_GET, $overrides);
+    // Ensure page/tab exist if provided in overrides
+    return add_query_arg($q, admin_url('admin.php'));
+}
+
+function hegzz_lookups_redirect_preserve(array $add = [], array $remove = []) {
+    // Build redirect from current URL so filters + paged are preserved (do NOT rely on referer).
+    $redirect = hegzz_lookups_current_request_uri();
+
+    $default_remove = [
+        '_wpnonce','_wp_http_referer',
+        'action','action2','id',
+        'hegzz_lookup_bulk_nonce',
+        'quick_edit','qe_id',
+        'bulk_ids','ids',
+        'filter_action',
+    ];
+    $remove = array_values(array_unique(array_merge($default_remove, $remove)));
+
+    $redirect = remove_query_arg($remove, $redirect);
+    if (!empty($add)) {
+        $redirect = add_query_arg($add, $redirect);
+    }
+    wp_safe_redirect($redirect);
+    exit;
+}
+
+
+function hegzz_lookups_types_categories_page() {
+    $tabs = [
+        'categories' => 'Categories',
+        'property-types' => 'Property Types',
+        'sub-properties' => 'Sub-Properties',
+        'property-models' => 'Property Models',
+        'usages' => 'Usages',
+        'aliases' => 'Aliases'
+    ];
+
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && (empty($_GET['tab']) || !isset($tabs[$_GET['tab']]))) {
+        hegzz_lookups_safe_redirect(hegzz_lookups_redirect_url('categories'));
+    }
+
+    $current_tab = hegzz_lookups_get_tab_from_request($tabs);
+    hegzz_lookups_handle_form_actions($current_tab);
+
+    $error = get_transient('hegzz_lookup_error');
+    $success = get_transient('hegzz_lookup_success');
+    if ($error) {
+        echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error) . '</p></div>';
+        delete_transient('hegzz_lookup_error');
+    }
+    if ($success) {
+        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($success) . '</p></div>';
+        delete_transient('hegzz_lookup_success');
+    }
+    ?>
+    <div class="wrap">
+        <h1 class="wp-heading-inline">Types & Categories</h1>
+        <hr class="wp-header-end">
+        <h2 class="nav-tab-wrapper">
+            <?php foreach ($tabs as $key => $name) { echo '<a href="?page=hegzz-lookups-types&tab='.$key.'" class="nav-tab'.($current_tab===$key?' nav-tab-active':'').'">'.$name.'</a>'; } ?>
+        </h2>
+        <div id="col-container" class="wp-clearfix" style="margin-top: 20px;">
+            <div id="col-left"><div class="col-wrap"><?php hegzz_lookups_render_form($current_tab); ?></div></div>
+            <div id="col-right"><div class="col-wrap"><?php hegzz_lookups_render_quick_edit($current_tab); hegzz_lookups_render_list_table($current_tab); ?></div></div>
+        </div>
+    </div>
+    <?php
+}
+
+function hegzz_lookups_get_tab_from_request($tabs) {
+    if (!empty($_REQUEST['tab']) && isset($tabs[$_REQUEST['tab']])) {
+        return sanitize_text_field($_REQUEST['tab']);
+    }
+    return 'categories';
+}
+
+function hegzz_lookups_render_list_table($tab) {
+$class_key = str_replace('-', '_', $tab);
+    $table_class = 'Hegzz_' . str_replace(' ', '_', ucwords(str_replace('_', ' ', $class_key))) . '_List_Table';
+    if (class_exists($table_class)) {
+        $list_table = new $table_class();
+        $list_table->prepare_items();
+        echo '<form method="get" action="' . esc_url(admin_url('admin.php')) . '">';
+        // keep page/tab always in URL
+        echo '<input type="hidden" name="page" value="hegzz-lookups-types" />';
+        echo '<input type="hidden" name="tab" value="' . esc_attr($tab) . '" />';
+        // keep nonce (works fine with GET in wp-admin)
+        wp_nonce_field('hegzz_lookup_bulk_action', 'hegzz_lookup_bulk_nonce');$list_table->display();
+        echo '</form>';
+    }
+}
+
+function hegzz_lookups_render_form($tab) {
+    /* === PM OVERRIDE: render form === */
+    if ($tab === 'property-models') {
+        hegzz_pm_render_form();
+        return;
+    }
+
+
+    $action = isset($_GET['action']) && $_GET['action'] == 'edit' ? 'edit' : 'add';
+    $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+    $entity_map = hegzz_lookups_get_entity_map();
+    $singular_entity = $entity_map[$tab] ?? '';
+    $item = $id > 0 ? call_user_func(['Hegzz_Lookups_Service', 'get_' . $singular_entity], $id) : null;
+    ?>
+    <div class="form-wrap">
+        <h2><?php echo $action === 'edit' ? 'Edit' : 'Add New'; ?></h2>
+        <form method="post" action="<?php echo esc_url(add_query_arg(['page'=>'hegzz-lookups-types','tab'=>$tab], admin_url('admin.php'))); ?>">
+  <input type="hidden" name="page" value="hegzz-lookups-types" />
+  <input type="hidden" name="tab" value="<?php echo esc_attr($tab); ?>" />
+<input type="hidden" name="action" value="<?php echo $action === 'edit' ? 'update' : 'add'; ?>">
+            <input type="hidden" name="id" value="<?php echo $id; ?>">
+            <?php wp_nonce_field('hegzz_save_lookup'); ?>
+
+            <div class="form-field"><label for="name_en">Name (EN)</label><input type="text" name="name_en" id="name_en" value="<?php echo esc_attr($item['name_en'] ?? ''); ?>" required></div>
+            <div class="form-field"><label for="name_ar">Name (AR)</label><input type="text" name="name_ar" id="name_ar" value="<?php echo esc_attr($item['name_ar'] ?? ''); ?>" required></div>
+            <div class="form-field"><label for="icon_class">Bootstrap Icon Class</label><input type="text" name="icon_class" id="icon_class" value="<?php echo esc_attr($item['icon_class'] ?? ''); ?>" placeholder="bi bi-house-door"></div>
+            <div class="form-field"><label for="sort_order">Sort Order</label><input type="number" name="sort_order" id="sort_order" value="<?php echo esc_attr($item['sort_order'] ?? 0); ?>" min="0"></div>
+            <div class="form-field"><label><input type="checkbox" name="is_active" value="1" <?php checked($item['is_active'] ?? 1, 1); ?>> <?php _e('Active', 'aqarand'); ?></label></div>
+
+            <?php if ($tab === 'property-types'):
+                $cats = Hegzz_Lookups_Service::get_all_categories(); $usages = Hegzz_Lookups_Service::get_all_usages();
+                $sel_cats = $id > 0 ? Hegzz_Lookups_Service::get_categories_for_property_type($id) : [];
+                $sel_usages = $id > 0 ? Hegzz_Lookups_Service::get_usages_for_property_type($id) : [];
+                echo '<div class="form-field"><label>Categories</label><select name="category_ids[]" multiple style="width:100%;height:100px;">';
+                foreach($cats as $cat) echo '<option value="'.$cat['id'].'" '.selected(in_array($cat['id'], $sel_cats), true, false).'>'.$cat['name_en'].'</option>';
+                echo '</select></div>';
+                echo '<div class="form-field"><label>Usages</label><select name="usage_ids[]" multiple style="width:100%;height:100px;">';
+                foreach($usages as $u) echo '<option value="'.$u['id'].'" '.selected(in_array($u['id'], $sel_usages), true, false).'>'.$u['name_en'].'</option>';
+                echo '</select></div>';
+            endif; ?>
+
+            <?php if ($tab === 'sub-properties'):
+                $types = Hegzz_Lookups_Service::get_all_property_types();
+                echo '<div class="form-field"><label>Parent Property Type</label><select name="property_type_id" required>';
+                foreach($types as $t) echo '<option value="'.$t['id'].'" '.selected($item['property_type_id'] ?? 0, $t['id'], false).'>'.$t['name_en'].'</option>';
+                echo '</select></div>';
+                echo '<p class="description">Inherits categories & usages from its parent Property Type.</p>';
+            endif; ?>
+
+            <?php if ($tab === 'aliases'):
+                $subs = Hegzz_Lookups_Service::get_all_sub_properties(['is_active' => null]);
+                $projects = get_posts(['post_type' => 'projects', 'posts_per_page' => -1]);
+                echo '<div class="form-field"><label>Sub-Property</label><select name="sub_property_id" required>';
+                foreach($subs as $s) echo '<option value="'.$s['id'].'" '.selected($item['sub_property_id'] ?? 0, $s['id'], false).'>'.$s['name_en'].'</option>';
+                echo '</select></div>';
+                echo '';
+            endif; ?>
+
+            <?php submit_button($action === 'edit' ? 'Update' : 'Add'); ?>
+        </form>
+    </div>
+    <?php
+}
+
+function hegzz_lookups_render_quick_edit($tab) {
+    if (!isset($_GET['action']) || $_GET['action'] !== 'quick-edit' || empty($_GET['id'])) {
+        return;
+    }
+    $entity_map = hegzz_lookups_get_entity_map();
+    $singular_entity = $entity_map[$tab] ?? '';
+    $item = call_user_func(['Hegzz_Lookups_Service', 'get_' . $singular_entity], (int) $_GET['id']);
+    if (!$item) return;
+    ?>
+    <div class="form-wrap">
+        <h2><?php _e('Quick Edit', 'aqarand'); ?></h2>
+        <form method="post" action="?page=hegzz-lookups-types&tab=<?php echo esc_attr($tab); ?>">
+            <?php wp_nonce_field('hegzz_quick_edit_lookup'); ?>
+            <input type="hidden" name="quick_edit" value="1">
+            <input type="hidden" name="id" value="<?php echo esc_attr($item['id']); ?>">
+            <?php if ($tab === 'aliases'): ?>
+                <?php $subs = Hegzz_Lookups_Service::get_all_sub_properties(['is_active' => null]); $projects = get_posts(['post_type' => 'projects', 'posts_per_page' => -1]); ?>
+                <div class="form-field"><label for="qe_alias_name_en">Name (EN)</label><input type="text" name="name_en" id="qe_alias_name_en" value="<?php echo esc_attr($item['name_en']); ?>" required></div>
+                <div class="form-field"><label for="qe_alias_name_ar">Name (AR)</label><input type="text" name="name_ar" id="qe_alias_name_ar" value="<?php echo esc_attr($item['name_ar']); ?>" required></div>
+                <div class="form-field"><label>Sub-Property</label><select name="sub_property_id" required><?php foreach($subs as $s) { echo '<option value="'.$s['id'].'" '.selected($item['sub_property_id'], $s['id'], false).'>'.$s['name_en'].'</option>'; } ?></select></div><?php else: ?>
+                <?php if ($tab === 'sub-properties'): ?><input type="hidden" name="property_type_id" value="<?php echo esc_attr($item['property_type_id']); ?>"><?php endif; ?>
+                <div class="form-field"><label for="qe_name_en">Name (EN)</label><input type="text" name="name_en" id="qe_name_en" value="<?php echo esc_attr($item['name_en']); ?>" required></div>
+                <div class="form-field"><label for="qe_name_ar">Name (AR)</label><input type="text" name="name_ar" id="qe_name_ar" value="<?php echo esc_attr($item['name_ar']); ?>" required></div>
+                <div class="form-field"><label for="qe_icon">Bootstrap Icon Class</label><input type="text" name="icon_class" id="qe_icon" value="<?php echo esc_attr($item['icon_class']); ?>"></div>
+                <div class="form-field"><label for="qe_sort_order">Sort Order</label><input type="number" name="sort_order" id="qe_sort_order" value="<?php echo esc_attr($item['sort_order'] ?? 0); ?>" min="0"></div>
+                <div class="form-field"><label><input type="checkbox" name="is_active" value="1" <?php checked($item['is_active'], 1); ?>> <?php _e('Active', 'aqarand'); ?></label></div>
+            <?php endif; ?>
+            <?php submit_button(__('Save Quick Edit', 'aqarand')); ?>
+        </form>
+    </div>
+    <?php
+}
+
+function hegzz_lookups_handle_form_actions($tab) {
+    /* === PM OVERRIDE: handle actions === */
+    if ($tab === 'property-models') {
+        hegzz_pm_handle_actions();
+        return;
+    }
+
+
+    hegzz_lookups_handle_bulk_actions($tab);
+    $redirect_url = hegzz_lookups_redirect_url($tab);
+    $entity_map = hegzz_lookups_get_entity_map();
+    $singular_entity = $entity_map[$tab] ?? '';
+
+    
+    /* === FIX: robust POST add/update handler (2025-12-21) === */
+
+    // Handle Add/Update (normal form submit) - always redirect to stable URL
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action']) && in_array($_POST['action'], ['add','update'], true)) {
+
+        // nonce check
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'hegzz_save_lookup')) {
+            set_transient('hegzz_lookup_error', 'Invalid security token.', 30);
+            $redir = admin_url('admin.php?page=hegzz-lookups-types&tab=' . urlencode($tab));
+            if (!headers_sent()) {
+                wp_safe_redirect($redir);
+            } else {
+                echo '<script>location.href=' . wp_json_encode($redir) . ';</script>';
+            }
+            exit;
+        }
+
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+
+        // base data
+        $data = [
+            'name_en'    => sanitize_text_field($_POST['name_en'] ?? ''),
+            'name_ar'    => sanitize_text_field($_POST['name_ar'] ?? ''),
+            'icon_class' => sanitize_text_field($_POST['icon_class'] ?? ''),
+            'sort_order' => isset($_POST['sort_order']) ? (int) $_POST['sort_order'] : 0,
+            'is_active'  => isset($_POST['is_active']) ? 1 : 0,
+        ];
+
+        // tab-specific required fields
+        if ($tab === 'sub-properties') {
+            $data['property_type_id'] = isset($_POST['property_type_id']) ? (int) $_POST['property_type_id'] : 0;
+        }
+
+        // execute
+        $ok = false;
+
+        if ($tab === 'aliases') {
+            $alias_data = [
+                'name_en' => sanitize_text_field($_POST['name_en'] ?? ''),
+                'name_ar' => sanitize_text_field($_POST['name_ar'] ?? ''),
+                'sub_property_id' => isset($_POST['sub_property_id']) ? (int) $_POST['sub_property_id'] : 0,
+            ];
+            if ($_POST['action'] === 'update') {
+                $ok = Hegzz_Lookups_Service::update_alias($id, $alias_data);
+            } else {
+                $ok = Hegzz_Lookups_Service::create_alias($alias_data);
+            }
+
+        } elseif ($tab === 'property-types') {
+            $cat_ids = isset($_POST['category_ids']) && is_array($_POST['category_ids']) ? array_map('intval', $_POST['category_ids']) : [];
+            $usage_ids = isset($_POST['usage_ids']) && is_array($_POST['usage_ids']) ? array_map('intval', $_POST['usage_ids']) : [];
+
+            if ($_POST['action'] === 'update') {
+                $existing_categories = Hegzz_Lookups_Service::get_categories_for_property_type($id);
+                $existing_usages     = Hegzz_Lookups_Service::get_usages_for_property_type($id);
+                $ok = Hegzz_Lookups_Service::update_property_type($id, $data, $existing_categories, $existing_usages);
+                // then apply selected (if your update_property_type doesn't accept new arrays, keep existing logic elsewhere)
+                // If your service expects new arrays, replace above call with the correct signature.
+            } else {
+                // create_property_type signature may differ; best-effort:
+                if (method_exists('Hegzz_Lookups_Service', 'create_property_type')) {
+                    $ok = Hegzz_Lookups_Service::create_property_type($data, $cat_ids, $usage_ids);
+                } else {
+                    $ok = call_user_func(['Hegzz_Lookups_Service', 'create_' . $singular_entity], $data);
+                }
+            }
+
+        } else {
+            if ($_POST['action'] === 'update') {
+                $ok = call_user_func(['Hegzz_Lookups_Service', 'update_' . $singular_entity], $id, $data);
+            } else {
+                $ok = call_user_func(['Hegzz_Lookups_Service', 'create_' . $singular_entity], $data);
+            }
+        }
+
+        hegzz_lookups_flush_cache();
+
+        if ($ok) {
+            set_transient('hegzz_lookup_success', ($_POST['action'] === 'update') ? 'Item updated successfully.' : 'Item created successfully.', 30);
+        } else {
+            set_transient('hegzz_lookup_error', 'Failed to save item.', 30);
+        }
+
+        $redir = admin_url('admin.php?page=hegzz-lookups-types&tab=' . urlencode($tab));
+        if (!headers_sent()) {
+            wp_safe_redirect($redir);
+        } else {
+            echo '<script>location.href=' . wp_json_encode($redir) . ';</script>';
+        }
+        exit;
+    }
+
+// Handle Delete Action
+    if (isset($_GET['action'], $_GET['id'], $_GET['_wpnonce']) && $_GET['action'] === 'delete') {
+        if (wp_verify_nonce($_GET['_wpnonce'], 'hegzz_delete_lookup')) {
+            $result = call_user_func(['Hegzz_Lookups_Service', 'delete_' . $singular_entity], (int)$_GET['id']);
+            hegzz_lookups_flush_cache();
+            if ($result) {
+                set_transient('hegzz_lookup_success', 'Item deleted successfully.', 30);
+            } else {
+                set_transient('hegzz_lookup_error', 'Failed to delete item.', 30);
+            }
+        } else {
+            set_transient('hegzz_lookup_error', 'Invalid security token.', 30);
+        }
+    // Preserve current filters + paged after delete (do NOT rely on static $redirect_url).
+    $redirect = (is_string($_SERVER['REQUEST_URI'] ?? '') ? wp_unslash($_SERVER['REQUEST_URI']) : '');
+    $redirect = remove_query_arg(['action','id','_wpnonce','_wp_http_referer'], $redirect);
+    $redirect = add_query_arg(['deleted'=>1], $redirect);
+    hegzz_lookups_safe_redirect($redirect);
+    }// Quick edit
+    if (isset($_POST['quick_edit']) && wp_verify_nonce($_POST['_wpnonce'], 'hegzz_quick_edit_lookup')) {
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+
+/* === PM SAVE: bedrooms guard by categories (AUTO) === */
+            // Force bedrooms=0 unless selected categories include: سكني or إجازات وساحلي
+            $allow_bedrooms = false;
+            $allowed_ar = ['سكني', 'إجازات وساحلي'];
+
+            if (!empty($cat_ids) && is_array($cats)) {
+                foreach ($cats as $__c) {
+                    $cid = (int)($__c['id'] ?? 0);
+                    if ($cid <= 0 || !in_array($cid, $cat_ids, true)) continue;
+                    $ar = trim((string)($__c['name_ar'] ?? ''));
+                    if (in_array($ar, $allowed_ar, true)) { $allow_bedrooms = true; break; }
+                }
+            }
+
+            if (!$allow_bedrooms) {
+                $_POST['bedrooms'] = 0;
+            }
+
+        $data = [
+            'name_en' => sanitize_text_field($_POST['name_en']),
+            'name_ar' => sanitize_text_field($_POST['name_ar']),
+            'icon_class' => sanitize_text_field($_POST['icon_class'] ?? ''),
+            'sort_order' => isset($_POST['sort_order']) ? (int) $_POST['sort_order'] : 0,
+            'is_active' => isset($_POST['is_active']) ? 1 : 0,
+        ];
+
+            // PM SAVE bedrooms guard (AUTO)
+            if (isset($allow_bedrooms) && !$allow_bedrooms) { $data['bedrooms'] = 0; }
+
+        if ($tab === 'aliases') {
+            $alias_data = [
+                'name_en' => sanitize_text_field($_POST['name_en']),
+                'name_ar' => sanitize_text_field($_POST['name_ar']),
+                'sub_property_id' => isset($_POST['sub_property_id']) ? (int) $_POST['sub_property_id'] : 0,
+                ];
+            $result = Hegzz_Lookups_Service::update_alias($id, $alias_data);
+        } elseif ($tab === 'property-types') {
+            $existing_categories = Hegzz_Lookups_Service::get_categories_for_property_type($id);
+            $existing_usages = Hegzz_Lookups_Service::get_usages_for_property_type($id);
+            $result = Hegzz_Lookups_Service::update_property_type($id, $data, $cat_ids, $usage_ids);
+} else {
+            if ($tab === 'sub-properties') {
+                $data['property_type_id'] = isset($_POST['property_type_id']) ? (int) $_POST['property_type_id'] : 0;
+            }
+            $result = call_user_func(['Hegzz_Lookups_Service', 'update_' . $singular_entity], $id, $data);
+        }
+        hegzz_lookups_flush_cache();
+        if ($result && !is_wp_error($result)) {
+            set_transient('hegzz_lookup_success', 'Item updated successfully.', 30);
+        } else {
+            $error_message = is_wp_error($result) ? $result->get_error_message() : 'An unknown error occurred.';
+            set_transient('hegzz_lookup_error', $error_message, 30);
+        }
+        
+        // Redirect using current URL so filters + paged are preserved (avoid losing GET filters).
+        $redirect = (is_string($_SERVER['REQUEST_URI'] ?? '') ? wp_unslash($_SERVER['REQUEST_URI']) : '');
+        $redirect = remove_query_arg(['action','id','_wpnonce','_wp_http_referer'], $redirect);
+        $redirect = add_query_arg(['deleted' => 1], $redirect);
+        hegzz_lookups_safe_redirect($redirect);
+}
+
+    // Handle Add/Update Actions
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['action'], $_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'hegzz_save_lookup')) return;
+
+    $action = $_POST['action'];
+    $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+
+    $data = [
+        'name_en' => sanitize_text_field($_POST['name_en']),
+        'name_ar' => sanitize_text_field($_POST['name_ar']),
+        'icon_class' => sanitize_text_field($_POST['icon_class']),
+        'sort_order' => isset($_POST['sort_order']) ? (int)$_POST['sort_order'] : 0,
+        'is_active' => isset($_POST['is_active']) ? 1 : 0,
+    ];
+
+    $result = false;
+
+    switch ($tab) {
+        case 'property-types':
+            $cat_ids = isset($_POST['category_ids']) ? array_map('intval', $_POST['category_ids']) : [];
+            $usage_ids = isset($_POST['usage_ids']) ? array_map('intval', $_POST['usage_ids']) : [];
+            if ($action === 'add') $result = Hegzz_Lookups_Service::create_property_type($data, $cat_ids, $usage_ids);
+
+            // === PM SAVE bedrooms guard (AUTO) ===
+            $allow_bedrooms = false;
+            if (!empty($cat_ids) && is_array($cats)) {
+                foreach ($cats as $__c) {
+                    $cid = (int)($__c['id'] ?? 0);
+                    if ($cid <= 0 || !in_array($cid, $cat_ids, true)) continue;
+
+                    $slug = strtolower((string)($__c['slug'] ?? ''));
+                    $en   = strtolower((string)($__c['name_en'] ?? ''));
+                    $ar   = (string)($__c['name_ar'] ?? '');
+
+                    if (in_array($slug, ['residential','housing','vacation','vacations','holiday','holidays','coastal','seaside','north-coast'], true)
+                        || strpos($en, 'residen') !== false
+                        || strpos($en, 'vacat')   !== false
+                        || strpos($en, 'holiday') !== false
+                        || strpos($en, 'coast')   !== false
+                        || strpos($en, 'seaside') !== false
+                        || (function_exists('mb_strpos') && (mb_strpos($ar, 'سكن') !== false
+                            || mb_strpos($ar, 'إجاز') !== false
+                            || mb_strpos($ar, 'اجاز') !== false
+                            || mb_strpos($ar, 'ساحل') !== false
+                            || mb_strpos($ar, 'ساحلي') !== false))
+                    ) { $allow_bedrooms = true; break; }
+                }
+            }
+
+            elseif ($id > 0) $result = Hegzz_Lookups_Service::update_property_type($id, $data, $cat_ids, $usage_ids);
+            break;
+        case 'sub-properties':
+            $parent_id = (int)$_POST['property_type_id'];
+            $data['property_type_id'] = $parent_id;
+            if ($action === 'add') $result = Hegzz_Lookups_Service::create_sub_property($data);
+            elseif ($id > 0) $result = Hegzz_Lookups_Service::update_sub_property($id, $data);
+            break;
+        case 'aliases':
+            $alias_data = ['name_en' => $data['name_en'], 'name_ar' => $data['name_ar'], 'sub_property_id' => (int)$_POST['sub_property_id']];
+            if ($action === 'add') $result = Hegzz_Lookups_Service::create_alias($alias_data);
+            elseif ($id > 0) $result = Hegzz_Lookups_Service::update_alias($id, $alias_data);
+            break;
+        default:
+            if ($action === 'add') $result = call_user_func(['Hegzz_Lookups_Service', 'create_' . $singular_entity], $data);
+            elseif ($id > 0) $result = call_user_func(['Hegzz_Lookups_Service', 'update_' . $singular_entity], $id, $data);
+            break;
+    }
+
+    if ($result && !is_wp_error($result)) {
+        hegzz_lookups_flush_cache();
+        $message = $action === 'add' ? 'Item added successfully.' : 'Item updated successfully.';
+        set_transient('hegzz_lookup_success', $message, 30);
+    } else {
+        $error_message = is_wp_error($result) ? $result->get_error_message() : 'An unknown error occurred.';
+        set_transient('hegzz_lookup_error', $error_message, 30);
+    }
+    
+        // Redirect using current URL so filters + paged are preserved (avoid losing GET filters).
+        $redirect = (is_string($_SERVER['REQUEST_URI'] ?? '') ? wp_unslash($_SERVER['REQUEST_URI']) : '');
+        $redirect = remove_query_arg(['action','id','_wpnonce','_wp_http_referer'], $redirect);
+        $redirect = add_query_arg(['deleted' => 1], $redirect);
+        hegzz_lookups_safe_redirect($redirect);
+}
+
+function hegzz_lookups_handle_bulk_actions($tab) {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['hegzz_lookup_bulk_nonce']) || !wp_verify_nonce($_POST['hegzz_lookup_bulk_nonce'], 'hegzz_lookup_bulk_action')) {
+        return;
+    }
+    $action = $_POST['action'] !== '-1' ? $_POST['action'] : ($_POST['action2'] ?? '-1');
+    if (!in_array($action, ['activate', 'deactivate', 'delete'], true)) {
+        return;
+    }
+    $ids = isset($_POST['ids']) ? array_map('intval', (array)$_POST['ids']) : [];
+    if (empty($ids)) return;
+
+    if ($tab === 'aliases' && $action === 'delete') {
+        foreach ($ids as $id) {
+            Hegzz_Lookups_Service::delete_alias($id);
+        }
+        hegzz_lookups_flush_cache();
+        set_transient('hegzz_lookup_success', 'Bulk action applied.', 30);
+        hegzz_lookups_safe_redirect(hegzz_lookups_redirect_url($tab));
+    }
+
+    $method_map = [
+        'categories' => 'set_category_active_state',
+        'property-types' => 'set_property_type_active_state',
+        'sub-properties' => 'set_sub_property_active_state',
+        'usages' => 'set_usage_active_state',
+    ];
+
+    if (!isset($method_map[$tab])) return;
+    $state = ($action === 'activate') ? 1 : 0;
+    call_user_func(['Hegzz_Lookups_Service', $method_map[$tab]], $ids, $state);
+    hegzz_lookups_flush_cache();
+    set_transient('hegzz_lookup_success', 'Bulk action applied.', 30);
+    hegzz_lookups_safe_redirect(hegzz_lookups_redirect_url($tab));
+}
+
+function hegzz_lookups_redirect_url($tab) {
+    return add_query_arg(
+        [
+            'page' => 'hegzz-lookups-types',
+            'tab'  => $tab,
+        ],
+        admin_url('admin.php')
+    );
+}
+
+function hegzz_lookups_safe_redirect($url) {
+    $redirected = wp_safe_redirect($url);
+
+    if ($redirected === false) {
+        $redirected = wp_redirect($url);
+    }
+
+    // If headers were sent (or redirect functions returned a string without sending headers), fall back to HTML/JS redirect to
+    // avoid leaving the user on a blank screen.
+    if (headers_sent()) {
+        echo '<meta http-equiv="refresh" content="0;url=' . esc_url($url) . '">';
+        echo '<script>window.location.href = ' . wp_json_encode($url) . ';</script>';
+        return;
+    }
+
+    if ($redirected) {
+        exit;
+    }
+
+
+/* === HEGZZ PROPERTY MODELS LOOKUP (AUTO) === */
+if ($tab === 'property-models') {
+    // Minimal first version: CRUD via service, categories multi, type id manual (AJAX endpoint prepared)
+    if (isset($_POST['hegzz_pm_action']) && $_POST['hegzz_pm_action'] === 'save') {
+        if (!current_user_can('manage_options')) { wp_die('forbidden'); }
+        check_admin_referer('hegzz_pm_save');
+
+        $service = hegzz_get_lookups_service();
+
+        $model_id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+
+        $category_ids = isset($_POST['category_ids']) ? (array)$_POST['category_ids'] : [];
+        $category_ids = array_values(array_unique(array_filter(array_map('intval', $category_ids), fn($v)=>$v>0)));
+
+        $property_type_id = isset($_POST['property_type_id']) ? (int)$_POST['property_type_id'] : 0;
+
+        $data = [
+            'id' => $model_id,
+            'name_ar' => isset($_POST['name_ar']) ? wp_unslash($_POST['name_ar']) : '',
+            'name_en' => isset($_POST['name_en']) ? wp_unslash($_POST['name_en']) : '',
+            'slug' => isset($_POST['slug']) ? wp_unslash($_POST['slug']) : '',
+            'property_type_id' => $property_type_id,
+            'bedrooms' => isset($_POST['bedrooms']) ? (int)$_POST['bedrooms'] : 0,
+            'icon' => isset($_POST['icon']) ? wp_unslash($_POST['icon']) : '',
+            'is_active' => isset($_POST['is_active']) ? 1 : 0,
+        ];
+
+        // Validate type belongs to selected categories (server-side guard)
+        if (!empty($category_ids) && $property_type_id > 0) {
+            global $wpdb;
+            $t_ptc = $wpdb->prefix . 'hegzz_property_type_categories';
+            $in = implode(',', array_fill(0, count($category_ids), '%d'));
+            $sql = "SELECT COUNT(*) FROM {$t_ptc} WHERE property_type_id = %d AND category_id IN ({$in})";
+            $count = $wpdb->get_var($wpdb->prepare($sql, $property_type_id, ...$category_ids));
+            if ((int)$count <= 0) {
+                $data['property_type_id'] = 0;
+            }
+        }
+
+        $new_id = $service->upsert_property_model($data);
+        if ($new_id) { $service->set_property_model_categories($new_id, $category_ids); }
+
+        wp_cache_flush();
+        hegzz_lookups_redirect_preserve(['updated'=>1]);
+    }
+
+    if (isset($_GET['hegzz_pm_delete']) && (int)$_GET['hegzz_pm_delete'] > 0) {
+        if (!current_user_can('manage_options')) { wp_die('forbidden'); }
+        check_admin_referer('hegzz_pm_delete');
+
+        $service = hegzz_get_lookups_service();
+        $service->delete_property_model((int)$_GET['hegzz_pm_delete']);
+        wp_cache_flush();
+
+        // Build redirect from current URL so filters + paged are preserved (do NOT rely on referer).
+        $redirect = (is_string($_SERVER['REQUEST_URI'] ?? '') ? wp_unslash($_SERVER['REQUEST_URI']) : '');
+        $redirect = remove_query_arg(['hegzz_pm_delete','_wpnonce','_wp_http_referer'], $redirect);
+        $redirect = add_query_arg(['deleted'=>1], $redirect);
+        wp_safe_redirect($redirect);
+        exit;
+    }
+
+    $service = hegzz_get_lookups_service();
+    
+    // === Property Models: pagination + filters ===
+    $per_page = 20;
+    $paged = isset($_GET['paged']) ? max(1, (int)$_GET['paged']) : 1;
+    $offset = ($paged - 1) * $per_page;
+
+    $filter_search = isset($_REQUEST['pm_search']) ? sanitize_text_field(wp_unslash($_REQUEST['pm_search'])) : '';
+    $filter_bedrooms = (isset($_REQUEST['pm_bedrooms']) && $_REQUEST['pm_bedrooms'] !== '') ? (int)$_REQUEST['pm_bedrooms'] : null;
+    $filter_active = (isset($_REQUEST['pm_active']) && $_REQUEST['pm_active'] !== '') ? (int)$_REQUEST['pm_active'] : null;
+    $filter_pt = (isset($_REQUEST['pm_property_type_id']) && $_REQUEST['pm_property_type_id'] !== '') ? (int)$_REQUEST['pm_property_type_id'] : null;
+    $filter_sp = (isset($_REQUEST['pm_sub_property_id']) && $_REQUEST['pm_sub_property_id'] !== '') ? (int)$_REQUEST['pm_sub_property_id'] : null;
+
+    $pm_args = [
+        'limit' => $per_page,
+        'offset' => $offset,
+        'search' => $filter_search,
+    ];
+    if ($filter_bedrooms !== null) $pm_args['bedrooms'] = $filter_bedrooms;
+    if ($filter_active !== null) $pm_args['is_active'] = $filter_active;
+    if ($filter_pt !== null) $pm_args['property_type_id'] = $filter_pt;
+    if ($filter_sp !== null) $pm_args['sub_property_id'] = $filter_sp;
+
+    $total_models = method_exists($service, 'count_property_models') ? $service->count_property_models($pm_args) : 0;
+    $models = $service->get_property_models($pm_args);
+
+    $total_pages = $total_models > 0 ? (int)ceil($total_models / $per_page) : 1;
+
+
+    global $wpdb;
+    $cats = $wpdb->get_results("SELECT id, name_ar, name_en, slug FROM {$wpdb->prefix}hegzz_categories ORDER BY id DESC", ARRAY_A);
+    ?>
+    <div class="wrap">
+      <h1>Property Models</h1>
+
+      <?php if (isset($_GET['updated'])): ?><div class="notice notice-success"><p>Saved.</p></div><?php endif; ?>
+      <?php if (isset($_GET['deleted'])): ?><div class="notice notice-success"><p>Deleted.</p></div><?php endif; ?>
+
+      <h2>Add / Update Model</h2>
+      <?php
+      // --- Filters UI (Property Models) ---
+      $base_url = remove_query_arg(['paged']);
+    ?>
+
+
+
+      <form method="post">
+        <?php wp_nonce_field('hegzz_pm_save'); ?>
+        <input type="hidden" name="hegzz_pm_action" value="save" />
+
+<input type="hidden" name="page" value="hegzz-lookups-types" />
+        <input type="hidden" name="tab" value="property-models" />
+        <table class="form-table">
+          <tr><th><label>ID (edit)</label></th><td><input type="number" name="id" value="" min="0" /></td></tr>
+          <tr><th><label>Name AR</label></th><td><input type="text" name="name_ar" class="regular-text" required /></td></tr>
+          <tr><th><label>Name EN</label></th><td><input type="text" name="name_en" class="regular-text" /></td></tr>
+          <tr><th><label>Slug</label></th><td><input type="text" name="slug" class="regular-text" placeholder="auto if empty" /></td></tr>
+          <tr>
+            <th><label>Categories (multi)</label></th>
+            <td>
+              <select name="category_ids[]" multiple size="6" style="min-width:320px">
+                <?php foreach ($cats as $c): ?>
+                  <option value="<?php echo esc_attr($c['id']); ?>"><?php echo esc_html(($c['name_en'] ?: $c['name_ar']) . ' (#' . $c['id'] . ')'); ?></option>
+                <?php endforeach; ?>
+              </select>
+            </td>
+          </tr>
+          <tr><th><label>Property Type ID</label></th><td><input type="number" name="property_type_id" value="0" min="0" /></td></tr>
+          <tr><th><label>Bedrooms</label></th><td><input type="number" name="bedrooms" value="0" min="0" max="50" /></td></tr>
+          <tr><th><label>Icon (optional)</label></th><td><input type="text" name="icon" class="regular-text" /></td></tr>
+          <tr><th><label>Active</label></th><td><label><input type="checkbox" name="is_active" checked /> Active</label></td></tr>
+        </table>
+        <?php submit_button('Save Model'); ?>
+      </form>
+
+      <hr />
+    </div>
+    <?php
+    return;
+}
+
+function hegzz_lookups_current_url($remove = [], $add = []) {
+    // Preserve current admin URL (including filters like pt_category_id, paged, etc.)
+    $url = '';
+    if (!empty($_SERVER['REQUEST_URI'])) {
+        $url = wp_unslash($_SERVER['REQUEST_URI']);
+    } else {
+        $url = admin_url('admin.php?page=hegzz-lookups-types');
+    }
+
+    $default_remove = [
+        '_wpnonce','_wp_http_referer',
+        'action','action2','id',
+        'deleted','updated','created',
+        'hegzz_lookup_bulk_nonce',
+        'quick_edit','qe_id',
+        'bulk_ids','ids',
+        'filter_action',
+    ];
+    $remove = array_values(array_unique(array_merge($default_remove, (array)$remove)));
+
+    $url = remove_query_arg($remove, $url);
+    if (!empty($add)) {
+        $url = add_query_arg($add, $url);
+    }
+    return $url;
+}
+
+/* === END HEGZZ PROPERTY MODELS LOOKUP (AUTO) === */
+
+}
+
+
+/* === PM JS: 2-level loader Categories -> Property Types -> Sub-Properties (AUTO) === */
+add_action('admin_footer', function () {
+    if (!is_admin()) return;
+    $page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
+    $tab  = isset($_GET['tab'])  ? sanitize_text_field($_GET['tab'])  : '';
+    if ($page !== 'hegzz-lookups-types' || $tab !== 'property-models') return;
+    ?>
+    <script>
+    (function(){
+      
+    function hegzzPmNonce() {
+      var el = document.getElementById('hegzz_pm_ajax_nonce');
+      if (el && el.value) return el.value;
+      if (window.hegzzPmAjax && window.hegzzPmAjax.nonce) return window.hegzzPmAjax.nonce;
+      return '';
+    }
+      var catsSel = document.getElementById('hegzz_pm_category_ids') || document.getElementById('hegzz_pm_category_ids_filter') || document.querySelector('select[name="pm_category_id"]');
+      var typeSel = document.getElementById('hegzz_pm_property_type_id') || document.getElementById('hegzz_pm_property_type_id_filter') || document.querySelector('select[name="pm_property_type_id"]');
+      var subSel  = document.getElementById('hegzz_pm_sub_property_id') || document.getElementById('hegzz_pm_sub_property_id_filter') || document.querySelector('select[name="pm_sub_property_id"]');
+      var nonceEl = document.getElementById('hegzz_pm_ajax_nonce');
+
+      var preType = document.getElementById('hegzz_pm_property_type_id_prefill');
+      var preSub  = document.getElementById('hegzz_pm_sub_property_id_prefill');
+
+      // === PM JS bedrooms toggle (AUTO) ===
+      var bedWrap = document.getElementById('hegzz_pm_bedrooms_wrap');
+      var bedInput = document.getElementById('bedrooms');
+
+      function shouldShowBedrooms(){
+        // check selected category option labels for Arabic/English keywords
+        try {
+          for (var i=0;i<catsSel.options.length;i++){
+            var o = catsSel.options[i];
+            if (!o.selected) continue;
+            var t = (o.textContent || '').toLowerCase();
+            if (t.indexOf('residen') !== -1 || t.indexOf('vacat') !== -1 || t.indexOf('holiday') !== -1 || t.indexOf('coast') !== -1 || t.indexOf('seaside') !== -1) return true;
+            if (t.indexOf('سكن') !== -1 || t.indexOf('إجاز') !== -1 || t.indexOf('اجاز') !== -1 || t.indexOf('ساحل') !== -1 || t.indexOf('ساحلي') !== -1) return true;
+          }
+        } catch(e){}
+        return false;
+      }
+
+      function syncBedroomsVisibility(){
+        if (!bedWrap) return;
+        var ok = shouldShowBedrooms();
+        bedWrap.style.display = ok ? '' : 'none';
+        if (!ok && bedInput) bedInput.value = '0';
+      }
+
+
+      if (!catsSel || !typeSel || !subSel || !nonceEl) return;
+
+      function selectedValues(select){
+        var out = [];
+        for (var i=0;i<select.options.length;i++){
+          var o = select.options[i];
+          if (o.selected) out.push(parseInt(o.value,10));
+        }
+        return out.filter(function(v){ return v>0; });
+      }
+
+      function setOptions(selectEl, items, selectedId){
+        selectEl.innerHTML = '<option value="0">— Select —</option>';
+        (items||[]).forEach(function(it){
+          var id = parseInt(it.id,10);
+          var name = (it.name_en || '') + ' / ' + (it.name_ar || '');
+          var opt = document.createElement('option');
+          opt.value = id;
+          opt.textContent = name;
+          if (selectedId && id === selectedId) opt.selected = true;
+          selectEl.appendChild(opt);
+        });
+      }
+
+      function post(action, extra){
+        var fd = new FormData();
+        fd.append('action', action);
+        fd.append('nonce', nonceEl.value);
+        if (extra) {
+          Object.keys(extra).forEach(function(k){
+            var v = extra[k];
+            if (Array.isArray(v)) v.forEach(function(x){ fd.append(k+'[]', x); });
+            else fd.append(k, v);
+          });
+        }
+        return fetch(ajaxurl, { method:'POST', credentials:'same-origin', body: fd })
+          .then(function(r){ return r.json(); });
+      }
+
+      function loadTypes(){
+        var catIds = selectedValues(catsSel);
+
+        // reset downstream
+        setOptions(typeSel, [], 0);
+        setOptions(subSel, [], 0);
+        if (preSub) preSub.value = '0';
+
+        if (!catIds.length) return Promise.resolve();
+
+        return post('hegzz_pm_get_property_types', { category_ids: catIds })
+          .then(function(j){
+            var sel = preType ? parseInt(preType.value||'0',10) : 0;
+            var items = (j && j.success && j.data && j.data.items) ? j.data.items : [];
+            setOptions(typeSel, items, sel);
+            // if prefill exists and still valid, auto-load subs
+            var currentType = parseInt(typeSel.value||'0',10);
+            if (currentType > 0) return loadSubs(currentType);
+          })
+          .catch(function(){
+            setOptions(typeSel, [], 0);
+            setOptions(subSel, [], 0);
+          });
+      }
+
+      function loadSubs(typeId){
+        setOptions(subSel, [], 0);
+        if (preSub) preSub.value = preSub.value || '0';
+
+        if (!typeId || typeId <= 0) return Promise.resolve();
+
+        return post('hegzz_pm_get_sub_properties', { property_type_id: typeId })
+          .then(function(j){
+            var sel = preSub ? parseInt(preSub.value||'0',10) : 0;
+            var items = (j && j.success && j.data && j.data.items) ? j.data.items : [];
+            setOptions(subSel, items, sel);
+          })
+          .catch(function(){ setOptions(subSel, [], 0); });
+      }
+
+      catsSel.addEventListener('change', function(){
+        syncBedroomsVisibility();
+        if (preType) preType.value = '0';
+        if (preSub) preSub.value = '0';
+        loadTypes();
+      });
+
+      typeSel.addEventListener('change', function(){
+        if (preSub) preSub.value = '0';
+        var typeId = parseInt(typeSel.value||'0',10);
+        loadSubs(typeId);
+      });
+
+      // initial load (edit/add)
+      loadTypes();
+    })();
+    </script>
+    <?php
+});
+/* === PM OVERRIDE IMPLEMENTATION (AUTO) === */
+
+function hegzz_pm_handle_actions() {
+    $redirect_url = add_query_arg(['page' => 'hegzz-lookups-types', 'tab' => 'property-models'], admin_url('admin.php'));
+    $did_action = false;
+
+    if (!current_user_can('manage_options')) { return; }
+
+    global $wpdb;
+    $service = function_exists('hegzz_get_lookups_service') ? hegzz_get_lookups_service() : new Hegzz_Lookups_Service();
+    // DELETE (preserve current filters + paged)
+    if (isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'delete') {
+        $id = (int) $_GET['id'];
+        if ($id > 0) {
+            check_admin_referer('hegzz_delete_lookup');
+
+            $ok = false;
+            if (method_exists($service, 'delete_property_model')) {
+                $ok = (bool) $service->delete_property_model($id);
+            } else {
+                // fallback delete direct
+                $t = $wpdb->prefix . 'hegzz_property_models';
+                $ok = (bool) $wpdb->delete($t, ['id' => $id], ['%d']);
+            }
+
+            if (function_exists('hegzz_lookups_flush_cache')) { hegzz_lookups_flush_cache(); }
+            if ($ok) {
+                set_transient('hegzz_lookup_success', 'Property Model deleted.', 30);
+            } else {
+                set_transient('hegzz_lookup_error', 'Failed to delete Property Model.', 30);
+            }
+        }
+
+        // redirect to same URL (keep pm_* + paged), remove delete params
+        $redirect = (is_string($_SERVER['REQUEST_URI'] ?? '') ? wp_unslash($_SERVER['REQUEST_URI']) : '');
+        $redirect = remove_query_arg(['action','id','_wpnonce','_wp_http_referer'], $redirect);
+        $redirect = add_query_arg(['deleted' => 1], $redirect);
+        wp_safe_redirect($redirect);
+        exit;
+    }
+
+
+    // SAVE (Add/Edit)
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name_en'], $_POST['name_ar'])) {
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'hegzz_save_lookup')) {
+            set_transient('hegzz_lookup_error', 'Invalid security token.', 30);
+            return;
+        }
+
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+
+        $cat_ids = isset($_POST['category_ids']) ? (array) $_POST['category_ids'] : [];
+        $cat_ids = array_values(array_unique(array_filter(array_map('intval', $cat_ids), function($v){ return $v > 0; })));
+
+        $sub_property_id = isset($_POST['sub_property_id']) ? (int) $_POST['sub_property_id'] : 0;
+
+        // derive property_type_id from sub_property_id
+        $property_type_id = 0;
+        if ($sub_property_id > 0) {
+            $t_sub = $wpdb->prefix . 'hegzz_sub_properties';
+            $property_type_id = (int) $wpdb->get_var($wpdb->prepare("SELECT property_type_id FROM {$t_sub} WHERE id=%d", $sub_property_id));
+        }
+
+        $slug = sanitize_title($_POST['slug'] ?? '');
+        if (!$slug) { $slug = sanitize_title($_POST['name_en']); }
+
+        $data = [
+            'id' => $id,
+            'name_en' => sanitize_text_field($_POST['name_en']),
+            'name_ar' => sanitize_text_field($_POST['name_ar']),
+            'slug' => $slug,
+            'property_type_id' => $property_type_id,
+            'sub_property_id' => $sub_property_id,
+            'bedrooms' => isset($_POST['bedrooms']) ? (int) $_POST['bedrooms'] : 0,
+            'icon' => sanitize_text_field($_POST['icon'] ?? ''),
+            'is_active' => isset($_POST['is_active']) ? 1 : 0,
+        ];
+
+        $saved_id = 0;
+        if (method_exists($service, 'upsert_property_model')) {
+            $saved_id = (int) $service->upsert_property_model($data);
+        } else {
+            // fallback direct insert/update
+            $t = $wpdb->prefix . 'hegzz_property_models';
+            $now = current_time('mysql');
+            if ($id > 0) {
+                $wpdb->update($t, [
+                    'name_en'=>$data['name_en'],
+                    'name_ar'=>$data['name_ar'],
+                    'slug'=>$data['slug'],
+                    'property_type_id'=>$data['property_type_id'],
+                    'sub_property_id'=>$data['sub_property_id'],
+                    'bedrooms'=>$data['bedrooms'],
+                    'icon'=>$data['icon'],
+                    'is_active'=>$data['is_active'],
+                    'updated_at'=>$now,
+                ], ['id'=>$id], ['%s','%s','%s','%d','%d','%d','%s','%d','%s'], ['%d']);
+                $saved_id = $id;
+            } else {
+                $wpdb->insert($t, [
+                    'name_en'=>$data['name_en'],
+                    'name_ar'=>$data['name_ar'],
+                    'slug'=>$data['slug'],
+                    'property_type_id'=>$data['property_type_id'],
+                    'sub_property_id'=>$data['sub_property_id'],
+                    'bedrooms'=>$data['bedrooms'],
+                    'icon'=>$data['icon'],
+                    'is_active'=>$data['is_active'],
+                    'created_at'=>$now,
+                    'updated_at'=>$now,
+                ], ['%s','%s','%s','%d','%d','%d','%s','%d','%s','%s']);
+                $saved_id = (int) $wpdb->insert_id;
+            }
+        }
+
+        if ($saved_id > 0 && method_exists($service, 'set_property_model_categories')) {
+            $service->set_property_model_categories($saved_id, $cat_ids);
+        } else if ($saved_id > 0) {
+            // fallback pivot write
+            $t_pivot = $wpdb->prefix . 'hegzz_property_model_categories';
+            $wpdb->delete($t_pivot, ['property_model_id'=>$saved_id], ['%d']);
+            foreach ($cat_ids as $cid) {
+                $wpdb->insert($t_pivot, ['property_model_id'=>$saved_id,'category_id'=>$cid], ['%d','%d']);
+            }
+        }
+
+        if (function_exists('hegzz_lookups_flush_cache')) { hegzz_lookups_flush_cache(); }
+        set_transient('hegzz_lookup_success', 'Property Model saved.', 30);
+        wp_safe_redirect(add_query_arg(['page'=>'hegzz-lookups-types','tab'=>'property-models','updated'=>1], admin_url('admin.php')));
+        exit;
+    }
+
+    if ($did_action) {
+        hegzz_lookups_redirect_preserve(['updated'=>1]);
+    }
+}
+
+function hegzz_pm_render_form() {
+    if (!current_user_can('manage_options')) { return; }
+    global $wpdb;
+
+    $service = function_exists('hegzz_get_lookups_service') ? hegzz_get_lookups_service() : new Hegzz_Lookups_Service();
+
+    $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
+    $edit_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+
+    $pm_item = null;
+    if ($action === 'edit' && $edit_id > 0) {
+        if (method_exists($service, 'get_property_model')) {
+            $pm_item = $service->get_property_model($edit_id);
+        } else {
+            $t = $wpdb->prefix . 'hegzz_property_models';
+            $pm_item = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$t} WHERE id=%d", $edit_id), ARRAY_A);
+        }
+    }
+
+    // categories list
+    $cats = [];
+    if (method_exists($service, 'get_categories')) {
+        $cats = $service->get_categories(['limit'=>500]);
+    } else {
+        $t = $wpdb->prefix . 'hegzz_categories';
+        $cats = $wpdb->get_results("SELECT id,name_en,name_ar FROM {$t} ORDER BY name_en ASC", ARRAY_A);
+    }
+    if (!is_array($cats)) $cats = [];
+
+    // selected cats
+    $selected_cat_ids = [];
+    $selected_sub_property_id = 0;
+$selected_property_type_id = 0;
+
+    if (is_array($pm_item) && !empty($pm_item['id'])) {
+        $pm_id = (int) $pm_item['id'];
+        $t_pivot = $wpdb->prefix . 'hegzz_property_model_categories';
+        $selected_cat_ids = $wpdb->get_col($wpdb->prepare("SELECT category_id FROM {$t_pivot} WHERE property_model_id=%d", $pm_id)) ?: [];
+        $selected_cat_ids = array_values(array_unique(array_filter(array_map('intval', (array)$selected_cat_ids), function($v){ return $v>0; })));
+        $selected_sub_property_id = isset($pm_item['sub_property_id']) ? (int)$pm_item['sub_property_id'] : 0;
+  $selected_property_type_id = isset($pm_item['property_type_id']) ? (int)$pm_item['property_type_id'] : 0;
+    }
+
+    $pm_ajax_nonce = wp_create_nonce('hegzz_pm_ajax');
+    $id = is_array($pm_item) ? (int)($pm_item['id'] ?? 0) : 0;
+
+    // Bedrooms field should only appear for Residential / Vacations / Coastal categories
+    $show_bedrooms = false;
+    if (!empty($selected_cat_ids) && is_array($cats)) {
+        foreach ($cats as $__c) {
+            $cid = (int)($__c['id'] ?? 0);
+            if ($cid <= 0 || !in_array($cid, $selected_cat_ids, true)) continue;
+
+            $slug = strtolower((string)($__c['slug'] ?? ''));
+            $en   = strtolower((string)($__c['name_en'] ?? ''));
+            $ar   = (string)($__c['name_ar'] ?? '');
+
+            // slug-based OR name-based matching (robust)
+            if (in_array($slug, ['residential','housing','vacation','vacations','holiday','holidays','coastal','seaside','north-coast'], true)
+                || strpos($en, 'residen') !== false
+                || strpos($en, 'vacat')   !== false
+                || strpos($en, 'holiday') !== false
+                || strpos($en, 'coast')   !== false
+                || strpos($en, 'seaside') !== false
+                || (function_exists('mb_strpos') && (mb_strpos($ar, 'سكن') !== false
+                    || mb_strpos($ar, 'إجاز') !== false
+                    || mb_strpos($ar, 'اجاز') !== false
+                    || mb_strpos($ar, 'ساحل') !== false
+                    || mb_strpos($ar, 'ساحلي') !== false))
+            ) {
+                $show_bedrooms = true;
+                break;
+            }
+        }
+    }
+
+
+    ?>
+    <form method="post" action="<?php echo esc_url(add_query_arg(['page'=>'hegzz-lookups-types','tab'=>'property-models'], admin_url('admin.php'))); ?>">
+        <?php wp_nonce_field('hegzz_save_lookup'); ?>
+        <input type="hidden" name="id" value="<?php echo esc_attr($id); ?>" /><div class="form-field" style="max-width:520px;margin-top:12px;">
+            <label for="hegzz_pm_category_ids"><strong>Categories</strong></label>
+            <select id="hegzz_pm_category_ids" name="category_ids[]" multiple style="width:100%;height:120px;">
+                <?php foreach ($cats as $c):
+                    $cid = (int)($c['id'] ?? 0);
+                    if ($cid <= 0) continue;
+                    $label = ($c['name_en'] ?? '') . ' / ' . ($c['name_ar'] ?? '');
+                ?>
+                    <option value="<?php echo esc_attr($cid); ?>" <?php echo in_array($cid, $selected_cat_ids, true) ? 'selected' : ''; ?>>
+                        <?php echo esc_html($label); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            
+  <p class="description">Select one or more categories to load Property Types.</p>
+</div>
+
+<div class="form-field" style="max-width:520px;margin-top:12px;">
+  <label for="hegzz_pm_property_type_id"><strong>Property Type</strong></label>
+  <select id="hegzz_pm_property_type_id" name="property_type_id" style="width:100%;">
+    <option value="0">— Select —</option>
+  </select>
+</div>
+        <div class="form-field" style="max-width:520px;margin-top:12px;">
+            <label for="hegzz_pm_sub_property_id"><strong>Sub-Property</strong></label>
+            <select id="hegzz_pm_sub_property_id" name="sub_property_id" style="width:100%;">
+                <option value="0">— Select —</option>
+            </select>
+        </div>
+
+        <input type="hidden" id="hegzz_pm_ajax_nonce" value="<?php echo esc_attr($pm_ajax_nonce); ?>">
+<input type="hidden" id="hegzz_pm_property_type_id_prefill" value="<?php echo esc_attr($selected_property_type_id); ?>">
+        <input type="hidden" id="hegzz_pm_sub_property_id_prefill" value="<?php echo esc_attr($selected_sub_property_id); ?>">
+
+        <div class="form-field">
+            <label for="name_en"><strong>Name (EN)</strong></label>
+            <input type="text" name="name_en" id="name_en" value="<?php echo esc_attr($pm_item['name_en'] ?? ''); ?>" required />
+        </div>
+
+        <div class="form-field">
+            <label for="name_ar"><strong>Name (AR)</strong></label>
+            <input type="text" name="name_ar" id="name_ar" value="<?php echo esc_attr($pm_item['name_ar'] ?? ''); ?>" required />
+        </div>
+
+        <div class="form-field">
+            <label for="slug"><strong>Slug</strong></label>
+            <input type="text" name="slug" id="slug" value="<?php echo esc_attr($pm_item['slug'] ?? ''); ?>" />
+        </div>
+        <?php if (!empty($show_bedrooms)) : ?>
+
+
+        <div id="hegzz_pm_bedrooms_wrap" class="form-field" style="max-width:520px;">
+            <label for="bedrooms"><strong>Bedrooms</strong></label>
+            <input type="number" name="bedrooms" id="bedrooms" value="<?php echo esc_attr((int)($pm_item['bedrooms'] ?? 0)); ?>" min="0" />
+        </div>
+
+        
+        <?php endif; ?>
+<div class="form-field">
+            <label for="icon"><strong>Bootstrap Icon Class</strong></label>
+            <input type="text" name="icon" id="icon" value="<?php echo esc_attr($pm_item['icon'] ?? ''); ?>" placeholder="bi bi-house-door" />
+        </div>
+
+        <p class="submit" style="margin-top:14px;">
+            <label style="display:inline-block;margin-right:10px;">
+                <input type="checkbox" name="is_active" value="1" <?php echo (!isset($pm_item['is_active']) || (int)($pm_item['is_active'] ?? 1) === 1) ? 'checked' : ''; ?> />
+                Active
+            </label>
+            <button type="submit" class="button button-primary"><?php echo $id ? 'Update' : 'Add New'; ?></button>
+        </p>
+    </form>
+    <?php
+}
+
+
+
+
+/* === PM JS bedrooms toggle by categories (AUTO) === */
+add_action('admin_footer', function () {
+    if (!is_admin()) return;
+    $page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
+    $tab  = isset($_GET['tab'])  ? sanitize_text_field($_GET['tab'])  : '';
+    if ($page !== 'hegzz-lookups-types' || $tab !== 'property-models') return;
+    ?>
+    <script>
+    (function(){
+      var catsSel = document.getElementById('hegzz_pm_category_ids');
+      var wrap = document.getElementById('hegzz_pm_bedrooms_wrap');
+      if (!catsSel || !wrap) return;
+
+      function shouldShowBedrooms(){
+        var allowed = {'سكني': true, 'إجازات وساحلي': true};
+        for (var i=0;i<catsSel.options.length;i++){
+          var o = catsSel.options[i];
+          if (!o.selected) continue;
+          var t = (o.textContent || '').trim();
+          // label is "EN / AR" -> take AR part after "/"
+          var ar = t;
+          if (t.indexOf('/') !== -1) ar = t.split('/').pop().trim();
+          if (allowed[ar]) return true;
+        }
+        return false;
+      }
+
+      function sync(){
+        wrap.style.display = shouldShowBedrooms() ? '' : 'none';
+        // optional: if hidden, reset value
+        if (wrap.style.display === 'none') {
+          var inp = document.getElementById('bedrooms');
+          if (inp) inp.value = 0;
+        }
+      }
+
+      catsSel.addEventListener('change', sync);
+      sync();
+    })();
+    </script>
+    <?php
+});
+
+
+
+
+/* === PM DELETE redirect handler (ADMIN_INIT) === */
+add_action('admin_init', function () {
+    if (!is_admin()) return;
+
+    $page = isset($_GET['page']) ? (string)$_GET['page'] : '';
+    $tab  = isset($_GET['tab']) ? (string)$_GET['tab'] : '';
+    $action = isset($_GET['action']) ? (string)$_GET['action'] : '';
+
+    if ($page !== 'hegzz-lookups-types' || $tab !== 'property-models') return;
+    if ($action !== 'delete') return;
+
+    // Validate id + nonce
+    $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+    if ($id <= 0) {
+        wp_safe_redirect(add_query_arg(['page'=>'hegzz-lookups-types','tab'=>'property-models'], admin_url('admin.php')));
+        exit;
+    }
+
+    if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'hegzz_delete_lookup')) {
+        wp_die(__('Security check failed', 'aqarand'));
+    }
+
+    // Delete then redirect to clean tab URL
+    $service = function_exists('hegzz_get_lookups_service') ? hegzz_get_lookups_service() : new Hegzz_Lookups_Service();
+    if (method_exists($service, 'delete_property_model')) {
+        $service->delete_property_model($id);
+    } elseif (is_callable(['Hegzz_Lookups_Service','delete_property_model'])) {
+        Hegzz_Lookups_Service::delete_property_model($id);
+    }
+
+    wp_safe_redirect(add_query_arg(['page'=>'hegzz-lookups-types','tab'=>'property-models'], admin_url('admin.php')));
+    exit;
+});
+
+
+
+
+/* === PM AJAX nonce in footer (LIST+FORM) === */
+add_action('admin_footer', function () {
+    if (!is_admin()) return;
+    $page = isset($_GET['page']) ? (string)$_GET['page'] : '';
+    $tab  = isset($_GET['tab']) ? (string)$_GET['tab'] : '';
+    if ($page !== 'hegzz-lookups-types' || $tab !== 'property-models') return;
+
+    $nonce = wp_create_nonce('hegzz_pm_ajax');
+
+    // Ensure nonce is available for JS on list page too
+    echo '<input type="hidden" id="hegzz_pm_ajax_nonce" value="' . esc_attr($nonce) . '">';
+
+    // Also expose a JS variable as fallback
+    echo "<script>window.hegzzPmAjax = window.hegzzPmAjax || {}; window.hegzzPmAjax.nonce = " . json_encode($nonce) . ";</script>";
+});
+

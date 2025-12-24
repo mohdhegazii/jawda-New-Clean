@@ -1,0 +1,30 @@
+<?php
+/**
+ * Main loader for the Categories/Subcategories/Property Types/Aliases lookups.
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+// 1. Database Schema
+require_once __DIR__ . '/db-update.php';
+
+// 2. Service Class
+require_once __DIR__ . '/class-jawda-lookups-service.php';
+
+// 3. API
+require_once __DIR__ . '/api.php';
+
+// 4. Legacy bridge helpers
+require_once __DIR__ . '/bridge.php';
+
+// 5. Admin UI
+if (is_admin()) {
+    require_once __DIR__ . '/admin/menu.php';
+    require_once __DIR__ . '/admin/ajax/property-models-ajax.php';
+    require_once __DIR__ . '/admin/ajax/property-types-ajax.php';
+}
+
+// 6. Migration placeholder (legacy seeder retained for manual runs)
+require_once __DIR__ . '/migration.php';

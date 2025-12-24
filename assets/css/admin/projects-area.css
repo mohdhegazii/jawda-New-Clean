@@ -1,0 +1,62 @@
+/* Projects > Basics data: Total area + Unit on one row (80/20)
+   This relies on JS adding:
+   - .jawda-area-row
+   - .jawda-unit-row
+   - .jawda-area-unit-wrap
+*/
+
+body.post-type-projects .jawda-area-unit-wrap{
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+}
+
+/* prevent Carbon rows from forcing full width */
+body.post-type-projects .jawda-area-row,
+body.post-type-projects .jawda-unit-row{
+  margin: 0 !important;
+}
+
+body.post-type-projects .jawda-area-row{
+  flex: 0 0 80%;
+  max-width: 80%;
+}
+
+body.post-type-projects .jawda-unit-row{
+  flex: 0 0 20%;
+  max-width: 20%;
+}
+
+/* make controls fill their columns */
+body.post-type-projects .jawda-area-row input,
+body.post-type-projects .jawda-unit-row select{
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* optional: reduce label spacing */
+body.post-type-projects .jawda-area-row .carbon-field__label,
+body.post-type-projects .jawda-unit-row .carbon-field__label{
+  margin-bottom: 6px;
+}
+
+/* === Hide Unit label + separator (Projects > Basics data) === */
+body.post-type-projects .jawda-areaunit-wrap .carbon-field__label{
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove extra top spacing caused by label */
+body.post-type-projects .jawda-areaunit-wrap .carbon-field__control{
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* In case Carbon renders <th> labels (table layout) */
+body.post-type-projects .jawda-areaunit-wrap th,
+body.post-type-projects .jawda-areaunit-wrap .carbon-field-row__label{
+  display: none !important;
+}
