@@ -34,9 +34,6 @@ class Jawda_Governorates_List_Table extends WP_List_Table {
         $this->_column_headers = [$columns, $hidden, $sortable];
         $current_page = $this->get_pagenum();
 
-        // Validate table exists or handle error silently?
-        // We assume it exists.
-
         $total_items = $wpdb->get_var("SELECT COUNT(id) FROM $table_name WHERE is_deleted = 0");
 
         $this->set_pagination_args([
