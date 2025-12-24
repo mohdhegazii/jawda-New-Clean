@@ -39,57 +39,6 @@
         }
     }
 
-    function parsePolygonData(polygonData) {
-        if (!polygonData) {
-            return null;
-        }
-
-        const trimmed = String(polygonData).trim();
-        if (!trimmed) {
-            return null;
-        }
-
-        try {
-            return JSON.parse(trimmed);
-        } catch (error) {
-            const hasSeparator = trimmed.indexOf(';') !== -1;
-            const rawPoints = hasSeparator ? trimmed.split(';') : trimmed.split('\n');
-            const points = rawPoints
-                .map(function(item) {
-                    const cleaned = item.trim().replace(/[()]/g, '');
-                    if (!cleaned) {
-                        return null;
-                    }
-                    const parts = cleaned.split(',').map(function(part) {
-                        return part.trim();
-                    });
-                    if (parts.length < 2) {
-                        return null;
-                    }
-                    const lat = parseFloat(parts[0]);
-                    const lng = parseFloat(parts[1]);
-                    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-                        return null;
-                    }
-                    return [lng, lat];
-                })
-                .filter(Boolean);
-
-            if (points.length < 3) {
-                return null;
-            }
-
-            if (points[0][0] !== points[points.length - 1][0] || points[0][1] !== points[points.length - 1][1]) {
-                points.push(points[0]);
-            }
-
-            return {
-                type: 'Polygon',
-                coordinates: [points]
-            };
-        }
-    }
-
     function initMap() {
         $('.jawda-location-picker').each(function() {
             const $picker = $(this);
@@ -140,11 +89,9 @@
             const polygonData = $picker.closest('form').find('textarea[name="polygon_coordinates"]').val();
             if (polygonData) {
                 try {
-                    const geojson = parsePolygonData(polygonData);
-                    if (geojson) {
-                        this._polygonLayer = L.geoJSON(geojson, { style: { color: '#ff7800', weight: 2 } }).addTo(map);
-                        fitPolygonToMap(map, this._polygonLayer);
-                    }
+                    const geojson = JSON.parse(polygonData);
+                    this._polygonLayer = L.geoJSON(geojson, { style: { color: '#ff7800', weight: 2 } }).addTo(map);
+                    fitPolygonToMap(map, this._polygonLayer);
                 } catch (e) {
                     console.error('Error parsing polygon data:', e);
                 }
@@ -176,14 +123,12 @@
 
         if (polygonData) {
             try {
-                const geojson = parsePolygonData(polygonData);
-                if (geojson) {
-                    const layer = L.geoJSON(geojson, { style: { color: '#ff7800', weight: 2 } }).addTo(map);
-                    if (picker) {
-                        picker._polygonLayer = layer;
-                    }
-                    fitPolygonToMap(map, layer);
+                const geojson = JSON.parse(polygonData);
+                const layer = L.geoJSON(geojson, { style: { color: '#ff7800', weight: 2 } }).addTo(map);
+                if (picker) {
+                    picker._polygonLayer = layer;
                 }
+                fitPolygonToMap(map, layer);
             } catch (e) {
                 console.error('Error parsing polygon data from option:', e);
                 // Fallback to flyTo if polygon parsing fails
