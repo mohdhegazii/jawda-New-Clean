@@ -1,6 +1,44 @@
 (function($) {
     'use strict';
 
+    function getSelectionData($picker) {
+        const $form = $picker.closest('form');
+        const $selects = $form.length
+            ? $form.find('select[name="district_id"], select[name="city_id"], select[name="governorate_id"]')
+            : $('select[name="district_id"], select[name="city_id"], select[name="governorate_id"]');
+
+        let selected = null;
+        $selects.each(function() {
+            const $option = $(this).find('option:selected');
+            if ($option.length && $option.val()) {
+                selected = $option;
+                return false;
+            }
+        });
+
+        if (!selected) {
+            return null;
+        }
+
+        return {
+            lat: parseFloat(selected.attr('data-lat')),
+            lng: parseFloat(selected.attr('data-lng')),
+            polygon: selected.attr('data-polygon') || ''
+        };
+    }
+
+    function fitPolygonToMap(map, polygonLayer) {
+        if (!map || !polygonLayer) {
+            return;
+        }
+
+        const bounds = polygonLayer.getBounds();
+        if (bounds && bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+            map.invalidateSize();
+        }
+    }
+
     function initMap() {
         $('.jawda-location-picker').each(function() {
             const $picker = $(this);
@@ -14,7 +52,7 @@
             const initialLng = parseFloat($mapDiv.data('initial-lng')) || 31.2357;
 
             // إنشاء الخريطة
-            window.map = L.map($mapDiv[0]).setView([initialLat, initialLng], 12);
+            const map = L.map($mapDiv[0]).setView([initialLat, initialLng], 12);
             $mapDiv.data('initialized', true);
 
             // حدود مصر
@@ -45,40 +83,52 @@
             // تخزين كائن الخريطة للوصول إليه لاحقاً
             this.jawdaLocationPicker = map;
             this._marker = marker;
+            this._polygonLayer = null;
 
-            // رسم البوليجون إذا كان موجوداً
-            const polygonData = $('textarea[name="polygon_coordinates"]').val();
+            // رسم البوليجون إذا كان موجوداً في الحقول
+            const polygonData = $picker.closest('form').find('textarea[name="polygon_coordinates"]').val();
             if (polygonData) {
                 try {
                     const geojson = JSON.parse(polygonData);
-                    if (window.currentPolygon) map.removeLayer(window.currentPolygon);
-                    window.currentPolygon = L.geoJSON(geojson, {style:{color:'#ff7800', weight:2}}).addTo(map);
-                    map.fitBounds(window.currentPolygon.getBounds());
+                    this._polygonLayer = L.geoJSON(geojson, { style: { color: '#ff7800', weight: 2 } }).addTo(map);
+                    fitPolygonToMap(map, this._polygonLayer);
                 } catch (e) {
                     console.error('Error parsing polygon data:', e);
+                }
+            } else {
+                const selectionData = getSelectionData($picker);
+                if (selectionData) {
+                    drawPolygonOnMap(map, selectionData.polygon, selectionData.lat, selectionData.lng, $picker.get(0));
                 }
             }
             
             // حل مشكلة الظهور الجزئي
             setTimeout(() => map.invalidateSize(), 500);
+
+            // تعيين مرجع عام للتكامل مع البحث
+            window.map = map;
+            window.marker = marker;
         });
     }
 
     // دالة لرسم البوليجون
-    function drawPolygonOnMap(map, polygonData, lat, lng) {
+    function drawPolygonOnMap(map, polygonData, lat, lng, pickerEl) {
         if (!map) return;
 
-        // إزالة البوليجون الحالي
-        if (window.currentPolygon) {
-            map.removeLayer(window.currentPolygon);
-            window.currentPolygon = null;
+        const picker = pickerEl || null;
+        if (picker && picker._polygonLayer) {
+            map.removeLayer(picker._polygonLayer);
+            picker._polygonLayer = null;
         }
 
         if (polygonData) {
             try {
                 const geojson = JSON.parse(polygonData);
-                window.currentPolygon = L.geoJSON(geojson, {style:{color:'#ff7800', weight:2}}).addTo(map);
-                map.fitBounds(window.currentPolygon.getBounds());
+                const layer = L.geoJSON(geojson, { style: { color: '#ff7800', weight: 2 } }).addTo(map);
+                if (picker) {
+                    picker._polygonLayer = layer;
+                }
+                fitPolygonToMap(map, layer);
             } catch (e) {
                 console.error('Error parsing polygon data from option:', e);
                 // Fallback to flyTo if polygon parsing fails
@@ -87,12 +137,12 @@
                 }
             }
         } else if (lat && lng) {
-             map.flyTo([lat, lng], 13);
+            map.flyTo([lat, lng], 13);
         }
     }
 
     // مراقبة الـ Dropdown (المحافظات والمدن)
-    $(document).on('change', 'select[name="governorate_id"], select[name="city_id"]', function() {
+    $(document).on('change', 'select[name="governorate_id"], select[name="city_id"], select[name="district_id"]', function() {
         const $option = $(this).find('option:selected');
         const lat = parseFloat($option.attr('data-lat'));
         const lng = parseFloat($option.attr('data-lng'));
@@ -104,7 +154,7 @@
                 if (lat && lng) {
                      this._marker.setLatLng([lat, lng]);
                 }
-                drawPolygonOnMap(map, polygon, lat, lng);
+                drawPolygonOnMap(map, polygon, lat, lng, this);
             }
         });
     });
@@ -161,4 +211,3 @@
 
 // Load Bridge
 jQuery.getScript(window.location.origin + '/masharf/wp-content/themes/jawda-New-Clean/admin/osm-bridge.js');
-
