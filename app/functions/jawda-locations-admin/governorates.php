@@ -112,6 +112,11 @@ class Jawda_Governorates_List_Table extends WP_List_Table {
         }
     }
 
+    public function process_actions() {
+        $this->process_bulk_action();
+        $this->handle_form_submission();
+    }
+
     public function render_page() {
         echo '<div class="wrap"><h2>Governorates</h2>';
         if (isset($_GET['action']) && $_GET['action'] == 'edit') {
