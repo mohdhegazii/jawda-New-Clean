@@ -45,27 +45,68 @@
             // تخزين كائن الخريطة للوصول إليه لاحقاً
             this.jawdaLocationPicker = map;
             this._marker = marker;
+
+            // رسم البوليجون إذا كان موجوداً
+            const polygonData = $('textarea[name="polygon_coordinates"]').val();
+            if (polygonData) {
+                try {
+                    const geojson = JSON.parse(polygonData);
+                    if (window.currentPolygon) map.removeLayer(window.currentPolygon);
+                    window.currentPolygon = L.geoJSON(geojson, {style:{color:'#ff7800', weight:2}}).addTo(map);
+                    map.fitBounds(window.currentPolygon.getBounds());
+                } catch (e) {
+                    console.error('Error parsing polygon data:', e);
+                }
+            }
             
             // حل مشكلة الظهور الجزئي
             setTimeout(() => map.invalidateSize(), 500);
         });
     }
 
-    // مراقبة الـ Dropdown (المحافظات)
-    $(document).on('change', 'select[name="governorate_id"]', function() {
+    // دالة لرسم البوليجون
+    function drawPolygonOnMap(map, polygonData, lat, lng) {
+        if (!map) return;
+
+        // إزالة البوليجون الحالي
+        if (window.currentPolygon) {
+            map.removeLayer(window.currentPolygon);
+            window.currentPolygon = null;
+        }
+
+        if (polygonData) {
+            try {
+                const geojson = JSON.parse(polygonData);
+                window.currentPolygon = L.geoJSON(geojson, {style:{color:'#ff7800', weight:2}}).addTo(map);
+                map.fitBounds(window.currentPolygon.getBounds());
+            } catch (e) {
+                console.error('Error parsing polygon data from option:', e);
+                // Fallback to flyTo if polygon parsing fails
+                if (lat && lng) {
+                    map.flyTo([lat, lng], 13);
+                }
+            }
+        } else if (lat && lng) {
+             map.flyTo([lat, lng], 13);
+        }
+    }
+
+    // مراقبة الـ Dropdown (المحافظات والمدن)
+    $(document).on('change', 'select[name="governorate_id"], select[name="city_id"]', function() {
         const $option = $(this).find('option:selected');
         const lat = parseFloat($option.attr('data-lat'));
         const lng = parseFloat($option.attr('data-lng'));
+        const polygon = $option.attr('data-polygon');
 
-        if (lat && lng) {
-            $('.jawda-location-picker').each(function() {
-                if (this.jawdaLocationPicker) {
-                    console.log('✈️ Flying to:', lat, lng);
-                    this.jawdaLocationPicker.flyTo([lat, lng], 13);
-                    this._marker.setLatLng([lat, lng]);
+        $('.jawda-location-picker').each(function() {
+            if (this.jawdaLocationPicker) {
+                const map = this.jawdaLocationPicker;
+                if (lat && lng) {
+                     this._marker.setLatLng([lat, lng]);
                 }
-            });
-        }
+                drawPolygonOnMap(map, polygon, lat, lng);
+            }
+        });
     });
 
     $(window).on('load', initMap);

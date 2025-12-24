@@ -141,6 +141,7 @@ class Jawda_Districts_List_Table extends WP_List_Table {
                 <option value="<?php echo $row->id; ?>" 
                         data-lat="<?php echo esc_attr($row->latitude); ?>" 
                         data-lng="<?php echo esc_attr($row->longitude); ?>" 
+                        data-polygon="<?php echo esc_attr(isset($row->polygon) ? $row->polygon : ''); ?>"
                         <?php echo (isset($item) && $item["city_id"] == $row->id) ? "selected" : ""; ?>>
                     <?php echo (is_object($row) ? $row->name_ar : $row["name_ar"]); ?>
                 </option>
@@ -189,6 +190,7 @@ class Jawda_Districts_List_Table extends WP_List_Table {
                 <option value="<?php echo $row->id; ?>" 
                         data-lat="<?php echo esc_attr($row->latitude); ?>" 
                         data-lng="<?php echo esc_attr($row->longitude); ?>" 
+                        data-polygon="<?php echo esc_attr(isset($row->polygon) ? $row->polygon : ''); ?>"
                         <?php echo (isset($item) && $item["city_id"] == $row->id) ? "selected" : ""; ?>>
                     <?php echo (is_object($row) ? $row->name_ar : $row["name_ar"]); ?>
                 </option>
@@ -201,6 +203,7 @@ class Jawda_Districts_List_Table extends WP_List_Table {
                     'lat_value' => isset($item['latitude']) ? $item['latitude'] : '',
                     'lng_id'    => 'district_longitude_edit',
                     'lng_value' => isset($item['longitude']) ? $item['longitude'] : '',
+                    'polygon_value' => isset($item['polygon']) ? $item['polygon'] : '',
                     'map_id'    => 'district-map-edit',
                 ]);
                 submit_button('Update District');

@@ -186,6 +186,7 @@ class Jawda_Governorates_List_Table extends WP_List_Table {
                     'lat_value' => isset($item['latitude']) ? $item['latitude'] : '',
                     'lng_id'    => 'governorate_longitude_edit',
                     'lng_value' => isset($item['longitude']) ? $item['longitude'] : '',
+                    'polygon_value' => isset($item['polygon']) ? $item['polygon'] : '',
                     'map_id'    => 'governorate-map-edit',
                 ]);
                 submit_button('Update Governorate');
@@ -229,6 +230,7 @@ class Jawda_Governorates_List_Table extends WP_List_Table {
 
         $latitude = jawda_locations_normalize_coordinate($_POST['latitude'] ?? null);
         $longitude = jawda_locations_normalize_coordinate($_POST['longitude'] ?? null);
+        $polygon = isset($_POST['polygon_coordinates']) ? wp_unslash($_POST['polygon_coordinates']) : '';
 
         // Explicitly map fields to match database schema expectations
         $data = [
@@ -238,6 +240,7 @@ class Jawda_Governorates_List_Table extends WP_List_Table {
             'slug_ar'    => $slug_ar,
             'latitude'   => $latitude,
             'longitude'  => $longitude,
+            'polygon'    => $polygon,
             'created_at' => current_time('mysql'),
             'is_deleted' => 0
         ];
@@ -256,6 +259,7 @@ class Jawda_Governorates_List_Table extends WP_List_Table {
         $name_en = sanitize_text_field($_POST['name_en']);
         $latitude = jawda_locations_normalize_coordinate($_POST['latitude'] ?? null);
         $longitude = jawda_locations_normalize_coordinate($_POST['longitude'] ?? null);
+        $polygon = isset($_POST['polygon_coordinates']) ? wp_unslash($_POST['polygon_coordinates']) : '';
 
         // Regenerate slugs or keep them?
         // We will regenerate to keep them in sync, ensuring they are not empty.
@@ -272,6 +276,7 @@ class Jawda_Governorates_List_Table extends WP_List_Table {
             'slug_ar'   => $slug_ar,
             'latitude'  => $latitude,
             'longitude' => $longitude,
+            'polygon'   => $polygon,
         ];
 
         $wpdb->update(

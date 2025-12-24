@@ -10,6 +10,7 @@ if (!function_exists('jawda_locations_render_coordinate_fields')) {
         $lng_id = $args['lng_id'] ?? '';
         $lat_value = $args['lat_value'] ?? '';
         $lng_value = $args['lng_value'] ?? '';
+        $polygon_value = $args['polygon_value'] ?? '';
         ?>
         <div class="coordinate-fields">
             <div class="form-field">
@@ -19,6 +20,10 @@ if (!function_exists('jawda_locations_render_coordinate_fields')) {
             <div class="form-field">
                 <label>Longitude</label>
                 <input type="text" name="longitude" id="<?php echo esc_attr($lng_id); ?>" value="<?php echo esc_attr($lng_value); ?>">
+            </div>
+            <div class="form-field" style="display:none;">
+                <label>Polygon Coordinates</label>
+                <textarea name="polygon_coordinates" rows="4"><?php echo esc_textarea($polygon_value); ?></textarea>
             </div>
             <div class="form-field">
                 <label>Map Preview</label>
