@@ -227,6 +227,11 @@ class Jawda_Cities_List_Table extends WP_List_Table {
         $table_name = $wpdb->prefix . 'jawda_cities';
         $name_ar = sanitize_text_field($_POST['name_ar']);
         $name_en = sanitize_text_field($_POST['name_en']);
+        $slug = sanitize_title($name_en);
+        $slug_ar = sanitize_title($name_ar);
+        if (empty($slug)) $slug = 'city-' . uniqid();
+        if (empty($slug_ar)) $slug_ar = 'ar-' . uniqid();
+
         $governorate_id = (int)$_POST['governorate_id'];
         $latitude = jawda_locations_normalize_coordinate($_POST['latitude'] ?? null);
         $longitude = jawda_locations_normalize_coordinate($_POST['longitude'] ?? null);
@@ -234,6 +239,8 @@ class Jawda_Cities_List_Table extends WP_List_Table {
         $wpdb->insert($table_name, [
             'name_ar'       => $name_ar,
             'name_en'       => $name_en,
+            'slug'          => $slug,
+            'slug_ar'       => $slug_ar,
             'governorate_id'=> $governorate_id,
             'latitude'      => $latitude,
             'longitude'     => $longitude,
@@ -253,18 +260,25 @@ class Jawda_Cities_List_Table extends WP_List_Table {
         $latitude = jawda_locations_normalize_coordinate($_POST['latitude'] ?? null);
         $longitude = jawda_locations_normalize_coordinate($_POST['longitude'] ?? null);
 
+        $slug = sanitize_title($name_en);
+        $slug_ar = sanitize_title($name_ar);
+
         // Get old governorate to clear its cache too
         $old_gov = $wpdb->get_var($wpdb->prepare("SELECT governorate_id FROM $table_name WHERE id = %d", $id));
 
+        $data = [
+            'name_ar'       => $name_ar,
+            'name_en'       => $name_en,
+            'governorate_id'=> $governorate_id,
+            'latitude'      => $latitude,
+            'longitude'     => $longitude,
+        ];
+        if (!empty($slug)) $data['slug'] = $slug;
+        if (!empty($slug_ar)) $data['slug_ar'] = $slug_ar;
+
         $wpdb->update(
             $table_name,
-            [
-                'name_ar'       => $name_ar,
-                'name_en'       => $name_en,
-                'governorate_id'=> $governorate_id,
-                'latitude'      => $latitude,
-                'longitude'     => $longitude,
-            ],
+            $data,
             ['id' => $id]
         );
 

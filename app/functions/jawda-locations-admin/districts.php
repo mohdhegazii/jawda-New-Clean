@@ -228,6 +228,11 @@ class Jawda_Districts_List_Table extends WP_List_Table {
         $table_name = $wpdb->prefix . 'jawda_districts';
         $name_ar = sanitize_text_field($_POST['name_ar']);
         $name_en = sanitize_text_field($_POST['name_en']);
+        $slug = sanitize_title($name_en);
+        $slug_ar = sanitize_title($name_ar);
+        if (empty($slug)) $slug = 'dist-' . uniqid();
+        if (empty($slug_ar)) $slug_ar = 'ar-' . uniqid();
+
         $city_id = (int)$_POST['city_id'];
         $latitude = jawda_locations_normalize_coordinate($_POST['latitude'] ?? null);
         $longitude = jawda_locations_normalize_coordinate($_POST['longitude'] ?? null);
@@ -235,6 +240,8 @@ class Jawda_Districts_List_Table extends WP_List_Table {
         $wpdb->insert($table_name, [
             'name_ar'   => $name_ar,
             'name_en'   => $name_en,
+            'slug'      => $slug,
+            'slug_ar'   => $slug_ar,
             'city_id'   => $city_id,
             'latitude'  => $latitude,
             'longitude' => $longitude,
@@ -254,18 +261,25 @@ class Jawda_Districts_List_Table extends WP_List_Table {
         $latitude = jawda_locations_normalize_coordinate($_POST['latitude'] ?? null);
         $longitude = jawda_locations_normalize_coordinate($_POST['longitude'] ?? null);
 
+        $slug = sanitize_title($name_en);
+        $slug_ar = sanitize_title($name_ar);
+
         // Get old city to clear cache
         $old_city = $wpdb->get_var($wpdb->prepare("SELECT city_id FROM $table_name WHERE id = %d", $id));
 
+        $data = [
+            'name_ar'   => $name_ar,
+            'name_en'   => $name_en,
+            'city_id'   => $city_id,
+            'latitude'  => $latitude,
+            'longitude' => $longitude,
+        ];
+        if (!empty($slug)) $data['slug'] = $slug;
+        if (!empty($slug_ar)) $data['slug_ar'] = $slug_ar;
+
         $wpdb->update(
             $table_name,
-            [
-                'name_ar'   => $name_ar,
-                'name_en'   => $name_en,
-                'city_id'   => $city_id,
-                'latitude'  => $latitude,
-                'longitude' => $longitude,
-            ],
+            $data,
             ['id' => $id]
         );
 

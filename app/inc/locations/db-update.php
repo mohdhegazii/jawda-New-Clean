@@ -22,8 +22,12 @@ function jawda_locations_update_db_schema() {
     ];
 
     $columns = [
+        'name_ar'      => "VARCHAR(255) NOT NULL",
+        'name_en'      => "VARCHAR(255) NOT NULL",
         'slug'         => "VARCHAR(255) NULL",
         'slug_ar'      => "VARCHAR(255) NULL",
+        'latitude'     => "DECIMAL(10, 8) NULL",
+        'longitude'    => "DECIMAL(11, 8) NULL",
         'country_code' => "VARCHAR(5) DEFAULT 'EG'",
         'is_active'    => "TINYINT(1) DEFAULT 1",
         'is_deleted'   => "TINYINT(1) DEFAULT 0",
@@ -125,9 +129,9 @@ function jawda_populate_location_slugs() {
 
 // Run once via admin_init
 add_action( 'admin_init', function() {
-    // Version incremented to 1.1 to trigger new columns and indexes
-    if ( get_option( 'jawda_locations_db_version' ) !== '1.1' ) {
+    // Version incremented to 1.2 to trigger new columns and indexes
+    if ( get_option( 'jawda_locations_db_version' ) !== '1.2' ) {
         jawda_locations_update_db_schema();
-        update_option( 'jawda_locations_db_version', '1.1' );
+        update_option( 'jawda_locations_db_version', '1.2' );
     }
 } );
