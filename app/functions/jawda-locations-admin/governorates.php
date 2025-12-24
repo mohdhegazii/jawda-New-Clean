@@ -188,12 +188,19 @@ class Jawda_Governorates_List_Table extends WP_List_Table {
         $table_name = $wpdb->prefix . 'jawda_governorates';
         $name_ar = sanitize_text_field($_POST['name_ar']);
         $name_en = sanitize_text_field($_POST['name_en']);
+        $slug = sanitize_title($name_en);
+        $slug_ar = sanitize_title($name_ar);
+        if (empty($slug)) $slug = 'gov-' . uniqid();
+        if (empty($slug_ar)) $slug_ar = 'ar-' . uniqid();
+
         $latitude = jawda_locations_normalize_coordinate($_POST['latitude'] ?? null);
         $longitude = jawda_locations_normalize_coordinate($_POST['longitude'] ?? null);
 
         $wpdb->insert($table_name, [
             'name_ar'    => $name_ar,
             'name_en'    => $name_en,
+            'slug'       => $slug,
+            'slug_ar'    => $slug_ar,
             'latitude'   => $latitude,
             'longitude'  => $longitude,
             'created_at' => current_time('mysql'),
@@ -211,14 +218,26 @@ class Jawda_Governorates_List_Table extends WP_List_Table {
         $latitude = jawda_locations_normalize_coordinate($_POST['latitude'] ?? null);
         $longitude = jawda_locations_normalize_coordinate($_POST['longitude'] ?? null);
 
+        // Ideally we only update slug if name changed, but here we can just ensure they exist
+        // or re-generate. If existing slug is manually edited we might want to keep it, but
+        // there is no slug field in the form. So auto-updating is safer to ensure consistency.
+        $slug = sanitize_title($name_en);
+        $slug_ar = sanitize_title($name_ar);
+
+        // Retain old slug if generation fails (e.g. empty)
+        $data = [
+            'name_ar'   => $name_ar,
+            'name_en'   => $name_en,
+            'latitude'  => $latitude,
+            'longitude' => $longitude,
+        ];
+
+        if (!empty($slug)) $data['slug'] = $slug;
+        if (!empty($slug_ar)) $data['slug_ar'] = $slug_ar;
+
         $wpdb->update(
             $table_name,
-            [
-                'name_ar'   => $name_ar,
-                'name_en'   => $name_en,
-                'latitude'  => $latitude,
-                'longitude' => $longitude,
-            ],
+            $data,
             ['id' => $id]
         );
 
