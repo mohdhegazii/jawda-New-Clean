@@ -180,3 +180,5 @@ add_action('admin_menu', function() {
         25
     );
 }, 999);
+
+require_once get_template_directory() . '/app/inc/developers/routes.php';
