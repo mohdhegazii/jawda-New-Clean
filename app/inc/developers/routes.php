@@ -10,7 +10,6 @@ if (!defined('ABSPATH')) {
 add_action('init', function() {
     add_rewrite_rule('^مشروعات-جديدة/([^/]+)/?$', 'index.php?jawda_dev_slug=$matches[1]', 'top');
     add_rewrite_rule('^en/new-projects/([^/]+)/?$', 'index.php?jawda_dev_slug=$matches[1]', 'top');
-    add_rewrite_rule('^developer/([^/]+)/?$', 'index.php?jawda_dev_slug=$matches[1]', 'top');
 });
 
 add_filter('query_vars', function($vars) {
@@ -48,9 +47,8 @@ add_filter('template_include', function($template) {
         'logo_id' => $developer['logo'],
     ];
     $GLOBALS['jawda_is_rendering_developer_template'] = true;
-    $GLOBALS['current_dev_data'] = (object) $developer;
 
-    return get_theme_file_path('single-developer.php');
+    return get_theme_file_path('app/templates/developers/single-developer.php');
 });
 
 add_action('after_switch_theme', function() {
