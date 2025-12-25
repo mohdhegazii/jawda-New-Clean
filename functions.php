@@ -1,4 +1,5 @@
 <?php
+require_once get_template_directory() . '/app/inc/admin-seo-templates.php';
 
 /**
  * Jawda SEO: Force Redirect spaces to dashes in URLs to prevent duplicate content
@@ -163,3 +164,19 @@ if (is_admin()) {
     ini_set('display_errors', 0);
 }
 
+
+
+/**
+ * تسجيل صفحة SEO Factory بشكل صحيح لضمان صلاحيات الوصول
+ */
+add_action('admin_menu', function() {
+    add_menu_page(
+        'SEO Factory', 
+        'SEO Factory', 
+        'manage_options', 
+        'jawda-seo-templates', 
+        'jawda_render_seo_templates_page', 
+        'dashicons-performance', 
+        25
+    );
+}, 999);
