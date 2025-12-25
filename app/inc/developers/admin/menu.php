@@ -73,8 +73,8 @@ function jawda_render_developers_list() {
             </thead>
             <tbody>
                 <?php if($results): foreach($results as $row): 
-                    $link_ar = home_url('/developer/' . rawurlencode($row->slug_ar));
-                    $link_en = home_url('/developer/' . rawurlencode($row->slug));
+                    $link_ar = home_url('/مشروعات-جديدة/' . rawurlencode($row->slug_ar));
+                    $link_en = home_url('/en/new-projects/' . rawurlencode($row->slug));
                 ?>
                 <tr>
                     <td><?php echo $row->id; ?></td>
