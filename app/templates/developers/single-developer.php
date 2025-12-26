@@ -8,7 +8,11 @@ if (empty($GLOBALS['jawda_is_rendering_developer_template'])) {
 $developer = $GLOBALS['jawda_current_developer'];
 $is_ar = function_exists('jawda_is_arabic_locale') ? jawda_is_arabic_locale() : is_rtl();
 
-get_my_header();
+if (function_exists('get_my_header')) {
+    get_my_header();
+} else {
+    get_header();
+}
 
 if (function_exists('get_my_property_header')) {
     get_my_property_header();
@@ -67,4 +71,8 @@ require_once get_template_directory() . '/app/templates/boxs/project_box.php';
 <?php
 $GLOBALS['wp_query'] = $previous_wp_query;
 
-get_my_footer();
+if (function_exists('get_my_footer')) {
+    get_my_footer();
+} else {
+    get_footer();
+}
