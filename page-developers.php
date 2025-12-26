@@ -14,20 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {	die( 'Invalid request.' ); }
 // Jawda header
 get_my_header();
 
-// Post Loop
-while ( have_posts() ) : the_post();
+// Category Header
+get_my_tax_header();
 
-// Page Header
-get_my_page_header();
-
-// End Loop
-endwhile;
-
-// Reset My Data
-wp_reset_postdata();
-
-// Contact Page
-get_my_page_developers();
+// Category Posts
+get_my_tax_pojects();
 
 // Jawda header
 get_my_footer();
