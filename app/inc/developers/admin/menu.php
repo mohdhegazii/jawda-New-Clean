@@ -73,18 +73,17 @@ function jawda_render_developers_list() {
             </thead>
             <tbody>
                 <?php if($results): foreach($results as $row): 
-                    $site_url = home_url("/");
-                    $link_ar = $site_url . "مشروعات-جديدة/" . $row->slug_ar . "/";
-                    $link_en = $site_url . "en/new-projects/" . $row->slug . "/";
+                    $link_ar = home_url('/developer/' . rawurlencode($row->slug_ar));
+                    $link_en = home_url('/developer/' . rawurlencode($row->slug));
                 ?>
                 <tr>
                     <td><?php echo $row->id; ?></td>
                     <td><strong><?php echo esc_html($row->name_ar); ?></strong></td>
                     <td><?php echo esc_html($row->name_en); ?></td>
                     <td>
-                        <a href="<?php echo $link_ar; ?>" target="_blank" style="text-decoration:none; font-weight:bold; color:#00a32a;">🔗 AR</a>
+                        <a href="<?php echo esc_url($link_ar); ?>" target="_blank" style="text-decoration:none; font-weight:bold; color:#00a32a;">🔗 AR</a>
                         <span style="color:#ccc; margin:0 5px;">|</span>
-                        <a href="<?php echo $link_en; ?>" target="_blank" style="text-decoration:none; font-weight:bold; color:#2271b1;">🔗 EN</a>
+                        <a href="<?php echo esc_url($link_en); ?>" target="_blank" style="text-decoration:none; font-weight:bold; color:#2271b1;">🔗 EN</a>
                     </td>
                     <td>
                         <a href="admin.php?page=jawda-add-developer&id=<?php echo $row->id; ?>" class="button button-small">Edit</a>
