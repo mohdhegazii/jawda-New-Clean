@@ -61,7 +61,56 @@ function get_my_header(){
     					</div>
     					<div class="h-left">
     						<div class="language">
-    							<?php if( function_exists('pll_the_languages') ){ pll_the_languages(); } ?>
+    							<?php
+                  if ( function_exists('pll_the_languages') ) {
+                    $languages = pll_the_languages( array( 'raw' => 1 ) );
+                    $queried_id = get_queried_object_id();
+
+                    if ( $languages && $queried_id ) {
+                      if ( is_singular() && function_exists('pll_get_post_translations') ) {
+                        $translations = pll_get_post_translations( $queried_id );
+
+                        foreach ( $languages as $slug => $lang ) {
+                          if ( isset( $translations[ $slug ] ) ) {
+                            $translated_id = $translations[ $slug ];
+
+                            if ( $translated_id ) {
+                              $languages[ $slug ]['url'] = get_permalink( $translated_id );
+                            }
+                          }
+                        }
+                      } elseif ( ( is_category() || is_tag() || is_tax() ) && function_exists('pll_get_term_translations') ) {
+                        $term_translations = pll_get_term_translations( $queried_id );
+
+                        foreach ( $languages as $slug => $lang ) {
+                          if ( isset( $term_translations[ $slug ] ) ) {
+                            $translated_term_id = $term_translations[ $slug ];
+                            $term_link = get_term_link( (int) $translated_term_id );
+
+                            if ( ! is_wp_error( $term_link ) ) {
+                              $languages[ $slug ]['url'] = $term_link;
+                            }
+                          }
+                        }
+                      }
+                    }
+
+                    if ( $languages ) {
+                      echo '<ul>';
+                      foreach ( $languages as $lang ) {
+                        $classes = array( 'lang-item', 'lang-item-' . $lang['slug'] );
+                        if ( ! empty( $lang['current_lang'] ) ) {
+                          $classes[] = 'current-lang';
+                        }
+
+                        echo '<li class="' . esc_attr( implode( ' ', $classes ) ) . '">';
+                        echo '<a href="' . esc_url( $lang['url'] ) . '">' . esc_html( $lang['name'] ) . '</a>';
+                        echo '</li>';
+                      }
+                      echo '</ul>';
+                    }
+                  }
+                  ?>
     						</div>
     					</div>
     				</div>
