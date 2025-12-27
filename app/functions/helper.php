@@ -206,9 +206,6 @@ function jawda_get_developer_slug($developer, $is_ar = null) {
   }
 
   $slug = $is_ar ? ($developer['slug_ar'] ?? '') : ($developer['slug_en'] ?? '');
-  if ($slug === '') {
-    $slug = $developer['slug_en'] ?? ($developer['slug_ar'] ?? '');
-  }
 
   return $slug;
 }
