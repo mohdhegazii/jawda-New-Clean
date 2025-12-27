@@ -309,7 +309,8 @@ class Jawda_Developers_Service {
     }
 
     protected function get_developer_by_slug($slug, $column) {
-        $slug = sanitize_title($slug);
+        $slug = rawurldecode((string) $slug);
+        $slug = trim($slug);
         if ('' === $slug) {
             return null;
         }
@@ -322,7 +323,7 @@ class Jawda_Developers_Service {
         }
 
         global $wpdb;
-        $developer = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->table} WHERE {$column} = %s", $slug), ARRAY_A);
+        $developer = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->table} WHERE {$column} = %s", $normalized_slug), ARRAY_A);
         if ($developer) {
             wp_cache_set($cache_key, $developer, 'jawda_developers');
         }
