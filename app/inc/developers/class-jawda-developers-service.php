@@ -316,15 +316,7 @@ class Jawda_Developers_Service {
         }
 
         $column = $this->resolve_slug_column($column);
-        $normalized_slug = sanitize_title($slug);
-        if ('' === $normalized_slug) {
-            $normalized_slug = sanitize_text_field($slug);
-        }
-        if ('' === $normalized_slug) {
-            return null;
-        }
-
-        $cache_key = $this->cache_key($column . ':' . $normalized_slug);
+        $cache_key = $this->cache_key($column . ':' . $slug);
         $cached = wp_cache_get($cache_key, 'jawda_developers');
         if (false !== $cached) {
             return $cached;
