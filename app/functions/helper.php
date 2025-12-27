@@ -206,19 +206,6 @@ function jawda_get_developer_slug($developer, $is_ar = null) {
   }
 
   $slug = $is_ar ? ($developer['slug_ar'] ?? '') : ($developer['slug_en'] ?? '');
-  if ($slug === '') {
-    $fallback_name = $is_ar ? ($developer['name_ar'] ?? '') : ($developer['name_en'] ?? '');
-    if ($fallback_name !== '') {
-      if ($is_ar) {
-        $slug = str_replace(' ', '-', $fallback_name);
-        $slug = preg_replace('/[^\x{0600}-\x{06FF}a-zA-Z0-9\-]/u', '', $slug);
-        $slug = preg_replace('/-+/', '-', $slug);
-        $slug = mb_strtolower($slug, 'UTF-8');
-      } else {
-        $slug = sanitize_title($fallback_name);
-      }
-    }
-  }
 
   return $slug;
 }
