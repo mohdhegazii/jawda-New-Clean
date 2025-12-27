@@ -53,8 +53,12 @@ function jawda_developers_pll_translation_url( $url, $lang ) {
         return $url;
     }
 
-    $slug_ar = $developer['slug_ar'] ?? '';
-    $slug_en = $developer['slug_en'] ?? ($developer['slug'] ?? '');
+    $slug_ar = function_exists('jawda_get_developer_slug')
+        ? jawda_get_developer_slug($developer, true)
+        : ($developer['slug_ar'] ?? '');
+    $slug_en = function_exists('jawda_get_developer_slug')
+        ? jawda_get_developer_slug($developer, false)
+        : ($developer['slug_en'] ?? ($developer['slug'] ?? ''));
     if ( $lang === 'ar' && $slug_ar ) {
         return home_url( '/مشروعات-جديدة/' . rawurlencode( $slug_ar ) . '/' );
     }

@@ -177,13 +177,13 @@ class Jawda_Developers_Service {
      */
     protected function prepare_developer_data(array $data, $existing_id = null, $existing = []) {
         $name_en = isset($data['name_en']) ? sanitize_text_field($data['name_en']) : ($existing['name_en'] ?? '');
-        $name_ar = isset($data[ 'slug_ar' ]) ? sanitize_text_field($data[ 'slug_ar' ]) : ($existing[ 'slug_ar' ] ?? '');
+        $name_ar = isset($data['name_ar']) ? sanitize_text_field($data['name_ar']) : ($existing['name_ar'] ?? '');
 
         if ('' === $name_en || '' === $name_ar) {
             return new WP_Error('jawda_developer_missing_name', __('Developer names (EN/AR) are required.', 'jawda'));
         }
 
-        $slug_en = isset($data['slug_en']) ? sanitize_title($data['slug_en']) : ($existing['slug_en'] ?? '');
+        $slug_en = isset($data['slug_en']) ? sanitize_title($data['slug_en']) : (isset($data['slug']) ? sanitize_title($data['slug']) : ($existing['slug_en'] ?? ''));
         $slug_ar = isset($data['slug_ar']) ? $this->slugify_ar($data['slug_ar']) : ($existing['slug_ar'] ?? '');
 
         if ('' === $slug_en) {
@@ -203,7 +203,7 @@ class Jawda_Developers_Service {
 
         $prepared = [
             'name_en'           => $name_en,
-             'slug_ar'            => $name_ar,
+            'name_ar'           => $name_ar,
             'slug_en'           => $slug_en,
             'slug_ar'           => $slug_ar,
             'developer_type_id' => $developer_type_id ?: null,
