@@ -67,6 +67,24 @@ function jawda_developers_pll_translation_url( $url, $lang ) {
 }
 add_filter( 'pll_translation_url', 'jawda_developers_pll_translation_url', 10, 2 );
 
+if ( ! function_exists( 'jawda_developers_slugify' ) ) {
+    function jawda_developers_slugify( $value, $lang = 'en' ) {
+        $value = trim( (string) $value );
+        if ( '' === $value ) {
+            return '';
+        }
+
+        if ( 'ar' === $lang ) {
+            $slug = str_replace( ' ', '-', $value );
+            $slug = preg_replace( '/[^\x{0600}-\x{06FF}a-zA-Z0-9\-]/u', '', $slug );
+            $slug = preg_replace( '/-+/', '-', $slug );
+            return mb_strtolower( $slug, 'UTF-8' );
+        }
+
+        return sanitize_title( $value );
+    }
+}
+
 add_action('after_switch_theme', function() {
     if (get_option('jawda_dev_routes_flushed')) {
         return;
