@@ -44,12 +44,11 @@ function get_my_project_main(){
   $faqs = carbon_get_post_meta($post_id, 'jawda_faq' ?: "");
 
   // Developer
-  $developer = get_the_terms( get_the_ID(), 'projects_developer' );
-  $dev_name = $dev_link = NULL;
-  if( isset($developer[0]->term_id) )
-  {
-    $dev_name = $developer[0]->name;
-    $dev_link = get_term_link($developer[0]);
+  $developer = jawda_get_project_developer($post_id);
+  $dev_name = $dev_link = null;
+  if (!empty($developer)) {
+    $dev_name = jawda_get_developer_display_name($developer);
+    $dev_link = jawda_get_developer_url($developer);
   }
 
   // New Location Structure

@@ -31,22 +31,21 @@ function get_my_sidbar($type,$postid,$porjid){
     </div>
     <?php if ( $porjid !== NULL ): ?>
       <?php
-      $term_obj_list = get_the_terms( $porjid, 'projects_developer' );
-      if ( is_array($term_obj_list) AND count($term_obj_list) > 0 ) {
-        $dev = $term_obj_list[0];
-        $dev_name = $dev->name;
-        $dev_link = esc_url( get_term_link( $dev ) );
-        $img_id = carbon_get_term_meta( $dev->term_id, 'jawda_thumb' );
-        $dev_logo = wp_get_attachment_url($img_id,'thumbnail');
+      $developer = jawda_get_project_developer($porjid);
+      if (!empty($developer)) {
+        $dev_name = jawda_get_developer_display_name($developer);
+        $dev_link = jawda_get_developer_url($developer);
+        $logo_id = $developer['logo_id'] ?? $developer['logo'] ?? null;
+        $dev_logo = $logo_id ? wp_get_attachment_url($logo_id, 'thumbnail') : '';
 
         ?>
         <div class="content-box center">
           <div class="developer-info">
             <div class="dev-img">
-              <a href="<?php echo $dev_link; ?>"><img loading="lazy" src="<?php echo $dev_logo; ?>" width="600" height="318" alt="<?php echo $dev_name; ?>" /></a>
+              <a href="<?php echo esc_url($dev_link); ?>"><img loading="lazy" src="<?php echo esc_url($dev_logo); ?>" width="600" height="318" alt="<?php echo esc_attr($dev_name); ?>" /></a>
             </div>
-            <p><b><a href="<?php echo $dev_link; ?>"><?php echo $dev_name; ?></a></b></p>
-            <div class="btn-side"><a href="<?php echo $dev_link; ?>"><?php get_text('المزيد','More'); ?></a></div>
+            <p><b><a href="<?php echo esc_url($dev_link); ?>"><?php echo esc_html($dev_name); ?></a></b></p>
+            <div class="btn-side"><a href="<?php echo esc_url($dev_link); ?>"><?php get_text('المزيد','More'); ?></a></div>
           </div>
         </div>
         <?php

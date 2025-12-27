@@ -18,7 +18,7 @@ function get_my_tax_header(){
 
   $taxonomy = get_queried_object()->taxonomy;
 
-  $projects_tax = ['projects_category','projects_tag','projects_developer','projects_area','projects_type','projects_features'];
+  $projects_tax = ['projects_category','projects_tag','projects_area','projects_type','projects_features'];
   $properties_tax = ['property_label','property_type','property_feature','property_city','property_area','property_state','property_status'];
 
   ?>

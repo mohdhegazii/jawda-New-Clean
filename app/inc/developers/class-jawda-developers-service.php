@@ -242,6 +242,7 @@ class Jawda_Developers_Service {
     protected function slug_exists($slug, $column, $exclude_id = null) {
         global $wpdb;
 
+        $column = $this->resolve_slug_column($column);
         $query = "SELECT id FROM {$this->table} WHERE {$column} = %s";
         $params = [$slug];
         if ($exclude_id) {
@@ -313,6 +314,7 @@ class Jawda_Developers_Service {
             return null;
         }
 
+        $column = $this->resolve_slug_column($column);
         $cache_key = $this->cache_key($column . ':' . $slug);
         $cached = wp_cache_get($cache_key, 'jawda_developers');
         if (false !== $cached) {
@@ -326,6 +328,25 @@ class Jawda_Developers_Service {
         }
 
         return $developer ?: null;
+    }
+
+    protected function resolve_slug_column($column) {
+        if (!in_array($column, ['slug_en', 'slug_ar'], true)) {
+            return $column;
+        }
+
+        global $wpdb;
+        static $available_columns = null;
+        if (null === $available_columns) {
+            $columns = $wpdb->get_col("SHOW COLUMNS FROM {$this->table}");
+            $available_columns = $columns ? array_map('strval', $columns) : [];
+        }
+
+        if (in_array($column, $available_columns, true)) {
+            return $column;
+        }
+
+        return in_array('slug', $available_columns, true) ? 'slug' : $column;
     }
 
     protected function prime_cache($id, array $developer) {
