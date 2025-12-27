@@ -323,7 +323,7 @@ class Jawda_Developers_Service {
         }
 
         global $wpdb;
-        $developer = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->table} WHERE {$column} = %s", $normalized_slug), ARRAY_A);
+        $developer = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->table} WHERE {$column} = %s", $slug), ARRAY_A);
         if ($developer) {
             wp_cache_set($cache_key, $developer, 'jawda_developers');
         }
