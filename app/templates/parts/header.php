@@ -95,6 +95,28 @@ function get_my_header(){
                       }
                     }
 
+                    $current_developer = $GLOBALS['jawda_current_developer'] ?? null;
+                    if ( $languages && $current_developer ) {
+                      $dev_slug_ar = $current_developer['slug_ar'] ?? ($current_developer['name_ar'] ?? '');
+                      $dev_slug_en = $current_developer['slug_en'] ?? ($current_developer['name_en'] ?? '');
+                      $dev_slug_ar = function_exists('jawda_developers_slugify')
+                        ? jawda_developers_slugify( $dev_slug_ar, 'ar' )
+                        : $dev_slug_ar;
+                      $dev_slug_en = function_exists('jawda_developers_slugify')
+                        ? jawda_developers_slugify( $dev_slug_en, 'en' )
+                        : $dev_slug_en;
+
+                      foreach ( $languages as $slug => $lang ) {
+                        if ( 'ar' === $slug && $dev_slug_ar ) {
+                          $languages[ $slug ]['url'] = home_url( '/مشروعات-جديدة/' . rawurlencode( $dev_slug_ar ) . '/' );
+                        }
+
+                        if ( 'en' === $slug && $dev_slug_en ) {
+                          $languages[ $slug ]['url'] = home_url( '/en/new-projects/' . rawurlencode( $dev_slug_en ) . '/' );
+                        }
+                      }
+                    }
+
                     if ( $languages ) {
                       echo '<ul>';
                       foreach ( $languages as $lang ) {
