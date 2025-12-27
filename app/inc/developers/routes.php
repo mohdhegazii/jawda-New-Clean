@@ -54,7 +54,7 @@ function jawda_developers_pll_translation_url( $url, $lang ) {
     }
 
     $slug_ar = $developer['slug_ar'] ?? '';
-    $slug_en = $developer['slug_en'] ?? '';
+    $slug_en = $developer['slug_en'] ?? ($developer['slug'] ?? '');
     if ( $lang === 'ar' && $slug_ar ) {
         return home_url( '/مشروعات-جديدة/' . rawurlencode( $slug_ar ) . '/' );
     }
