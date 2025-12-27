@@ -97,8 +97,12 @@ function get_my_header(){
 
                     $current_developer = $GLOBALS['jawda_current_developer'] ?? null;
                     if ( $languages && $current_developer ) {
-                      $dev_slug_ar = $current_developer['slug_ar'] ?? '';
-                      $dev_slug_en = $current_developer['slug_en'] ?? ($current_developer['slug'] ?? '');
+                      $dev_slug_ar = function_exists('jawda_get_developer_slug')
+                        ? jawda_get_developer_slug($current_developer, true)
+                        : ($current_developer['slug_ar'] ?? '');
+                      $dev_slug_en = function_exists('jawda_get_developer_slug')
+                        ? jawda_get_developer_slug($current_developer, false)
+                        : ($current_developer['slug_en'] ?? ($current_developer['slug'] ?? ''));
 
                       foreach ( $languages as $slug => $lang ) {
                         if ( 'ar' === $slug && $dev_slug_ar ) {
