@@ -280,10 +280,12 @@ function jawda_parse_project_request( $wp ) {
     $developer_slug = $path_parts[0];
     $project_slug   = $path_parts[1];
 
-    // Check if the first part is a valid developer slug
-    $developer_term = get_term_by( 'slug', $developer_slug, 'projects_developer' );
+    $is_en = preg_match( '#^en/#', $wp->request ) === 1;
+    $developer = $is_en && function_exists('jawda_get_developer_by_slug_en')
+        ? jawda_get_developer_by_slug_en($developer_slug)
+        : (function_exists('jawda_get_developer_by_slug_ar') ? jawda_get_developer_by_slug_ar($developer_slug) : null);
 
-    if ( ! $developer_term || is_wp_error( $developer_term ) ) {
+    if ( empty($developer) ) {
         return; // Not a developer, let WordPress handle it.
     }
 
@@ -293,11 +295,11 @@ function jawda_parse_project_request( $wp ) {
         'post_type'      => 'projects',
         'post_status'    => 'publish',
         'posts_per_page' => 1,
-        'tax_query'      => array(
+        'meta_query'     => array(
             array(
-                'taxonomy' => 'projects_developer',
-                'field'    => 'slug',
-                'terms'    => $developer_slug,
+                'key'     => '_selected_developer_id',
+                'value'   => $developer['id'],
+                'compare' => '=',
             ),
         ),
     );
@@ -308,7 +310,6 @@ function jawda_parse_project_request( $wp ) {
         $wp->query_vars = array(
             'post_type' => 'projects',
             'name'      => $project_slug,
-            'projects_developer' => $developer_slug
         );
         $wp->query_vars['p'] = $project_query->post->ID;
 
@@ -316,12 +317,6 @@ function jawda_parse_project_request( $wp ) {
     }
     // If no match, do nothing and let WordPress continue to its 404 or other rules.
 }
-
-// Add 'projects_developer' to the query vars so we can use it
-add_filter( 'query_vars', function( $vars ) {
-    $vars[] = 'projects_developer';
-    return $vars;
-});
 
 /* -----------------------------------------------------------------------------
 # Redirect old project URLs (projects/project-name) to new ones (developer/project-name)
@@ -344,10 +339,10 @@ function jawda_redirect_old_project_links() {
     $project_id = $post->ID;
 
     // Check if the project has a developer.
-    $terms = wp_get_post_terms( $project_id, 'projects_developer' );
+    $developer_id = jawda_get_project_developer_id($project_id);
 
     // If a developer is assigned, redirect to the new permalink.
-    if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
+    if ( $developer_id ) {
         $new_url = get_permalink( $project_id );
 
         // Perform a 301 redirect to the new URL.
@@ -383,10 +378,10 @@ function jawda_projects_without_developer_notice() {
         $args = array(
             'post_type'      => 'projects',
             'posts_per_page' => -1,
-            'tax_query'      => array(
+            'meta_query'     => array(
                 array(
-                    'taxonomy' => 'projects_developer',
-                    'operator' => 'NOT EXISTS',
+                    'key'     => '_selected_developer_id',
+                    'compare' => 'NOT EXISTS',
                 ),
             ),
             'fields' => 'ids', // Optimize by only getting post IDs

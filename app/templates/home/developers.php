@@ -18,17 +18,24 @@ function get_my_home_developers(){
       <div class="row">
         <div class="col-md-12 developers-slider">
           <?php
-             $developers = get_terms('developer', array('hide_empty' => 1));
-             foreach($developers as $developer) :
+             $is_ar = function_exists('jawda_is_arabic_locale') ? jawda_is_arabic_locale() : is_rtl();
+             $developers = function_exists('jawda_get_developers')
+               ? jawda_get_developers([
+                   'is_active' => 1,
+                   'number' => 50,
+                   'offset' => 0,
+               ])
+               : [];
+             foreach ($developers as $developer) :
+               $logo_id = $developer['logo_id'] ?? $developer['logo'] ?? null;
+               $image = $logo_id ? wp_get_attachment_url($logo_id, 'medium') : '';
+               $dev_link = jawda_get_developer_url($developer, $is_ar);
+               $dev_name = jawda_get_developer_display_name($developer, $is_ar);
              ?>
-             <?php
-             $img_id = carbon_get_term_meta( $developer->term_id, 'jawda_dev_logo' );
-             $image = wp_get_attachment_url($img_id,'medium');
-             ?>
-					<a href="<?php echo get_term_link( $developer->slug, $developer->taxonomy ); ?>" class="dev-logo">
-            <img loading="lazy" src="<?php echo $image; ?>" alt="<?php echo $developer->name; ?>" width="256" height="185" />
+          <a href="<?php echo esc_url($dev_link); ?>" class="dev-logo">
+            <img loading="lazy" src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($dev_name); ?>" width="256" height="185" />
           </a>
-          <?php endforeach;  ?>
+          <?php endforeach; ?>
         </div>
       </div>
     </div>

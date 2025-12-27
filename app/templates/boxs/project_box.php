@@ -71,9 +71,9 @@ function get_my_project_box($project_id){
         <i class="icon-location"></i><?php echo $project_location; ?>
       </span>
       <?php
-      $developer_terms = get_the_terms($project_id, 'projects_developer');
-      if ( !empty($developer_terms) && !is_wp_error($developer_terms) ) {
-          $developer_name = $developer_terms[0]->name;
+      $developer = jawda_get_project_developer($project_id);
+      if (!empty($developer)) {
+          $developer_name = jawda_get_developer_display_name($developer);
           echo '<span class="project-developer"><i class="icon-building"></i>' . esc_html($developer_name) . '</span>';
       }
       ?>

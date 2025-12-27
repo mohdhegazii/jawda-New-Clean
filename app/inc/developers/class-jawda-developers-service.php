@@ -242,6 +242,7 @@ class Jawda_Developers_Service {
     protected function slug_exists($slug, $column, $exclude_id = null) {
         global $wpdb;
 
+        $column = $this->resolve_slug_column($column);
         $query = "SELECT id FROM {$this->table} WHERE {$column} = %s";
         $params = [$slug];
         if ($exclude_id) {
@@ -308,24 +309,53 @@ class Jawda_Developers_Service {
     }
 
     protected function get_developer_by_slug($slug, $column) {
-        $slug = sanitize_title($slug);
+        $slug = rawurldecode((string) $slug);
+        $slug = trim($slug);
         if ('' === $slug) {
             return null;
         }
 
-        $cache_key = $this->cache_key($column . ':' . $slug);
+        $column = $this->resolve_slug_column($column);
+        $normalized_slug = sanitize_title($slug);
+        if ('' === $normalized_slug) {
+            $normalized_slug = sanitize_text_field($slug);
+        }
+        if ('' === $normalized_slug) {
+            return null;
+        }
+
+        $cache_key = $this->cache_key($column . ':' . $normalized_slug);
         $cached = wp_cache_get($cache_key, 'jawda_developers');
         if (false !== $cached) {
             return $cached;
         }
 
         global $wpdb;
-        $developer = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->table} WHERE {$column} = %s", $slug), ARRAY_A);
+        $developer = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->table} WHERE {$column} = %s", $normalized_slug), ARRAY_A);
         if ($developer) {
             wp_cache_set($cache_key, $developer, 'jawda_developers');
         }
 
         return $developer ?: null;
+    }
+
+    protected function resolve_slug_column($column) {
+        if (!in_array($column, ['slug_en', 'slug_ar'], true)) {
+            return $column;
+        }
+
+        global $wpdb;
+        static $available_columns = null;
+        if (null === $available_columns) {
+            $columns = $wpdb->get_col("SHOW COLUMNS FROM {$this->table}");
+            $available_columns = $columns ? array_map('strval', $columns) : [];
+        }
+
+        if (in_array($column, $available_columns, true)) {
+            return $column;
+        }
+
+        return in_array('slug', $available_columns, true) ? 'slug' : $column;
     }
 
     protected function prime_cache($id, array $developer) {
