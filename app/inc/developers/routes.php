@@ -40,6 +40,33 @@ add_filter('template_include', function($template) {
     return get_theme_file_path('app/templates/developers/single-developer.php');
 });
 
+/**
+ * Ensure Polylang language switcher links to the translated developer URL.
+ *
+ * @param string $url  Default translation URL.
+ * @param string $lang Target language code.
+ * @return string
+ */
+function jawda_developers_pll_translation_url( $url, $lang ) {
+    $developer = $GLOBALS['jawda_current_developer'] ?? null;
+    if ( ! $developer ) {
+        return $url;
+    }
+
+    $slug_ar = $developer['slug_ar'] ?? '';
+    $slug_en = $developer['slug_en'] ?? '';
+    if ( $lang === 'ar' && $slug_ar ) {
+        return home_url( '/مشروعات-جديدة/' . rawurlencode( $slug_ar ) . '/' );
+    }
+
+    if ( $lang === 'en' && $slug_en ) {
+        return home_url( '/en/new-projects/' . rawurlencode( $slug_en ) . '/' );
+    }
+
+    return $url;
+}
+add_filter( 'pll_translation_url', 'jawda_developers_pll_translation_url', 10, 2 );
+
 add_action('after_switch_theme', function() {
     if (get_option('jawda_dev_routes_flushed')) {
         return;
