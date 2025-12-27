@@ -15,7 +15,7 @@ function jawda_add_location_to_quick_edit($column_name, $post_type) {
         return;
     }
 
-    $is_project_column = ($post_type === 'projects' && $column_name === 'taxonomy-projects_developer');
+    $is_project_column = ($post_type === 'projects' && $column_name === 'title');
     $is_property_column = ($post_type === 'property' && $column_name === 'title');
 
     if ($is_project_column || $is_property_column) { // A good column to hook after
@@ -110,7 +110,7 @@ function jawda_add_location_to_bulk_edit($column_name, $post_type) {
         return;
     }
 
-    $is_project_column = ($post_type === 'projects' && $column_name === 'taxonomy-projects_developer');
+    $is_project_column = ($post_type === 'projects' && $column_name === 'title');
     $is_property_column = ($post_type === 'property' && $column_name === 'title');
 
     if ($is_project_column || $is_property_column) { // A good column to hook after
@@ -306,7 +306,7 @@ add_action('admin_enqueue_scripts', 'jawda_enqueue_quick_edit_locations_js');
  */
 function jawda_add_location_data_to_project_column($column, $post_id) {
     $post_type = get_post_type($post_id);
-    $is_project_column  = ($post_type === 'projects' && $column === 'taxonomy-projects_developer');
+    $is_project_column  = ($post_type === 'projects' && $column === 'title');
     $is_property_column = ($post_type === 'property' && $column === 'title');
 
     if ($is_project_column || $is_property_column) {
@@ -737,4 +737,3 @@ function jawda_update_project_coordinates_from_location($post_id) {
         ]);
     }
 }
-

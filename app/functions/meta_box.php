@@ -901,7 +901,7 @@ function jawda_terms_meta() {
   // Options
   $basic_options_container =
   Container::make( 'term_meta', __( 'Photo' ) )
-    ->where( 'term_taxonomy', 'IN', ['projects_type','projects_category','projects_tag','projects_developer','projects_area','property_label','property_type','property_feature','property_city','property_area','property_state','property_country','property_status'] )
+    ->where( 'term_taxonomy', 'IN', ['projects_type','projects_category','projects_tag','projects_area','property_label','property_type','property_feature','property_city','property_area','property_state','property_country','property_status'] )
     ->add_fields( array(
         Field::make( 'image', 'jawda_thumb', __( 'Cover photo' ) ),
     )

@@ -502,34 +502,37 @@ function ja_ajax_search_projects() {
     }
 
     // 2. Search Developers
-    $developer_results = get_terms([
-        'taxonomy'   => 'projects_developer',
-        'name__like' => $search_term,
-        'hide_empty' => true,
-        'number'     => 3,
-    ]);
+    $developer_results = function_exists('jawda_get_developers')
+        ? jawda_get_developers([
+            'is_active' => 1,
+            'search' => $search_term,
+            'number' => 3,
+            'offset' => 0,
+        ])
+        : [];
 
-    if ( ! is_wp_error( $developer_results ) && ! empty( $developer_results ) ) {
+    if ( ! empty( $developer_results ) ) {
         foreach ( $developer_results as $developer ) {
             $developer_projects = new WP_Query([
                 'post_type'      => 'projects',
                 'post_status'    => 'publish',
                 'posts_per_page' => 3,
-                'tax_query'      => [
+                'meta_query'     => [
                     [
-                        'taxonomy' => 'projects_developer',
-                        'field'    => 'term_id',
-                        'terms'    => $developer->term_id,
+                        'key'     => '_selected_developer_id',
+                        'value'   => $developer['id'],
+                        'compare' => '=',
                     ],
                 ],
             ]);
 
             if ( !empty( $developer_projects->posts ) ) {
+                $developer_name = jawda_get_developer_display_name($developer, $lang === 'ar');
                 foreach ( $developer_projects->posts as $post ) {
                     $items[] = [
                         'value' => get_the_title( $post->ID ),
                         'url'   => get_permalink( $post->ID ),
-                        'type'  => $developer->name
+                        'type'  => $developer_name
                     ];
                 }
             }

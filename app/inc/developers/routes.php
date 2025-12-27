@@ -23,29 +23,18 @@ add_filter('template_include', function($template) {
         return $template;
     }
 
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'jawda_developers';
-    $developer = $wpdb->get_row(
-        $wpdb->prepare(
-            "SELECT id, name_ar, name_en, description_ar, description_en, logo FROM {$table_name} WHERE slug = %s OR slug_ar = %s LIMIT 1",
-            $slug,
-            $slug
-        ),
-        ARRAY_A
-    );
+    $developer = function_exists('jawda_get_developer_by_slug_ar')
+        ? jawda_get_developer_by_slug_ar($slug)
+        : null;
+    if (!$developer && function_exists('jawda_get_developer_by_slug_en')) {
+        $developer = jawda_get_developer_by_slug_en($slug);
+    }
 
     if (!$developer) {
         return $template;
     }
 
-    $GLOBALS['jawda_current_developer'] = [
-        'id' => $developer['id'],
-        'name_ar' => $developer['name_ar'],
-        'name_en' => $developer['name_en'],
-        'description_ar' => $developer['description_ar'],
-        'description_en' => $developer['description_en'],
-        'logo_id' => $developer['logo'],
-    ];
+    $GLOBALS['jawda_current_developer'] = $developer;
     $GLOBALS['jawda_is_rendering_developer_template'] = true;
 
     return get_theme_file_path('app/templates/developers/single-developer.php');
