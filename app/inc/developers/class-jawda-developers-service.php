@@ -325,7 +325,7 @@ class Jawda_Developers_Service {
         }
 
         global $wpdb;
-        $developer = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->table} WHERE {$column} = %s", $slug), ARRAY_A);
+        $developer = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->table} WHERE (slug_en = %s OR slug_ar = %s) AND is_deleted = 0 LIMIT 1", $slug, $slug), ARRAY_A);
         if ($developer) {
             wp_cache_set($cache_key, $developer, 'jawda_developers');
         }

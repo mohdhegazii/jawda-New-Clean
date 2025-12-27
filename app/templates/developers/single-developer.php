@@ -1,4 +1,5 @@
 <?php
+$is_ar = (function_exists("pll_current_language") && pll_current_language() == "ar");
 if ( ! defined( 'ABSPATH' ) ) { die( 'Invalid request.' ); }
 
 if (empty($GLOBALS['jawda_is_rendering_developer_template'])) {
@@ -11,8 +12,8 @@ $lang = $is_ar ? 'ar' : 'en';
 $jawda_page_projects = function_exists('carbon_get_theme_option')
     ? carbon_get_theme_option('jawda_page_properties_' . $lang)
     : null;
-$developer_name = $is_ar ? ($developer['name_ar'] ?? '') : ($developer['name_en'] ?? '');
-$developer_description = $is_ar ? ($developer['description_ar'] ?? '') : ($developer['description_en'] ?? '');
+$developer_name = $is_ar ? ($developer['name_ar'] ?? '') : (($is_ar ? $developer['name_ar'] : ($is_ar ? $developer['name_ar'] : $developer['name_en'])) ?? '');
+$developer_description = $is_ar ? ($developer['description_ar'] ?? '') : (($is_ar ? $developer['description_ar'] : $developer['description_en']) ?? '');
 
 if (function_exists('get_my_header')) {
     get_my_header();
