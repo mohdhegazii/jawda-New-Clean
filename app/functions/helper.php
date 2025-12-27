@@ -106,25 +106,28 @@ function featured_city_tag($id,$termname){
 ----------------------------------------------------------------------------- */
 
 function get_developer_img($id){
-  $term_obj_list = get_the_terms( $id, 'developer' );
-  if ( ! empty( $term_obj_list ) && ! is_wp_error( $term_obj_list ) ) {
-    $termid = $term_obj_list[0]->term_id;
-    $img_id = carbon_get_term_meta( $termid, 'jawda_dev_logo' );
-    $image = wp_get_attachment_url($img_id);
-    return $image;
+  $developer = jawda_get_project_developer($id);
+  if (empty($developer)) {
+    return '';
   }
-  return '';
+
+  $logo_id = $developer['logo_id'] ?? $developer['logo'] ?? null;
+  if (!$logo_id) {
+    return '';
+  }
+
+  return wp_get_attachment_url($logo_id);
 }
 
 
 function get_developer_desc($id){
-  $term_obj_list = get_the_terms( $id, 'developer' );
-  if ( ! empty( $term_obj_list ) && ! is_wp_error( $term_obj_list ) ) {
-    $termid = $term_obj_list[0]->term_id;
-    $devdesc = carbon_get_term_meta( $termid, 'jawda_dev_desc' );
-    return $devdesc;
+  $developer = jawda_get_project_developer($id);
+  if (empty($developer)) {
+    return '';
   }
-  return '';
+
+  $is_ar = function_exists('jawda_is_arabic_locale') ? jawda_is_arabic_locale() : is_rtl();
+  return $is_ar ? ($developer['description_ar'] ?? '') : ($developer['description_en'] ?? '');
 }
 
 /* -----------------------------------------------------------------------------
@@ -132,22 +135,21 @@ function get_developer_desc($id){
 ----------------------------------------------------------------------------- */
 
 function get_developer_name($id){
-  $term_obj_list = get_the_terms( $id, 'projects_developer' );
-  if ( ! empty( $term_obj_list ) && ! is_wp_error( $term_obj_list ) ) {
-    return $term_obj_list[0]->name;
+  $developer = jawda_get_project_developer($id);
+  if (empty($developer)) {
+    return '';
   }
-  return '';
+
+  return jawda_get_developer_display_name($developer);
 }
 
 function get_developer_link($id){
-  $term_obj_list = get_the_terms( $id, 'projects_developer' );
-  if ( ! empty( $term_obj_list ) && ! is_wp_error( $term_obj_list ) ) {
-    $term_link = get_term_link( $term_obj_list[0] );
-    if ( ! is_wp_error( $term_link ) ) {
-      return esc_url( $term_link );
-    }
+  $developer = jawda_get_project_developer($id);
+  if (empty($developer)) {
+    return '';
   }
-  return '';
+
+  return jawda_get_developer_url($developer);
 }
 
 
@@ -156,11 +158,73 @@ function get_developer_link($id){
 ----------------------------------------------------------------------------- */
 
 function get_developer_box($id){
-  $term_obj_list = get_the_terms( $id, 'projects_developer' );
-  if ( ! empty( $term_obj_list ) && ! is_wp_error( $term_obj_list ) ) {
-    return $term_obj_list[0]->name;
+  $developer = jawda_get_project_developer($id);
+  if (empty($developer)) {
+    return '';
   }
-  return '';
+
+  return jawda_get_developer_display_name($developer);
+}
+
+function jawda_get_project_developer_id($project_id) {
+  return (int) get_post_meta($project_id, '_selected_developer_id', true);
+}
+
+function jawda_get_project_developer($project_id) {
+  $developer_id = jawda_get_project_developer_id($project_id);
+  if (!$developer_id || !function_exists('jawda_get_developer_by_id')) {
+    return null;
+  }
+
+  return jawda_get_developer_by_id($developer_id);
+}
+
+function jawda_get_developer_display_name($developer, $is_ar = null) {
+  if (empty($developer)) {
+    return '';
+  }
+
+  if (null === $is_ar) {
+    $is_ar = function_exists('jawda_is_arabic_locale') ? jawda_is_arabic_locale() : is_rtl();
+  }
+
+  $name = $is_ar ? ($developer['name_ar'] ?? '') : ($developer['name_en'] ?? '');
+  if ($name === '') {
+    $name = $developer['name_en'] ?? ($developer['name_ar'] ?? '');
+  }
+
+  return $name;
+}
+
+function jawda_get_developer_slug($developer, $is_ar = null) {
+  if (empty($developer)) {
+    return '';
+  }
+
+  if (null === $is_ar) {
+    $is_ar = function_exists('jawda_is_arabic_locale') ? jawda_is_arabic_locale() : is_rtl();
+  }
+
+  $slug = $is_ar ? ($developer['slug_ar'] ?? '') : ($developer['slug_en'] ?? '');
+  if ($slug === '') {
+    $slug = $developer['slug_en'] ?? ($developer['slug_ar'] ?? '');
+  }
+
+  return $slug;
+}
+
+function jawda_get_developer_url($developer, $is_ar = null) {
+  $slug = jawda_get_developer_slug($developer, $is_ar);
+  if ($slug === '') {
+    return '';
+  }
+
+  if (null === $is_ar) {
+    $is_ar = function_exists('jawda_is_arabic_locale') ? jawda_is_arabic_locale() : is_rtl();
+  }
+
+  $base = $is_ar ? 'مشروعات-جديدة' : 'en/new-projects';
+  return home_url(user_trailingslashit($base . '/' . $slug));
 }
 
 /* -----------------------------------------------------------------------------

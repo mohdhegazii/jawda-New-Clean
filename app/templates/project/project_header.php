@@ -21,12 +21,11 @@ function get_my_project_header(){
   $faqs = carbon_get_post_meta( $post_id, 'jawda_faq' );
 
   // Developer
-  $developer = get_the_terms( get_the_ID(), 'projects_developer' );
-  $dev_name = $dev_link = NULL;
-  if( isset($developer[0]->term_id) )
-  {
-    $dev_name = $developer[0]->name;
-    $dev_link = get_term_link($developer[0]);
+  $developer = jawda_get_project_developer($post_id);
+  $dev_name = $dev_link = null;
+  if (!empty($developer)) {
+    $dev_name = jawda_get_developer_display_name($developer);
+    $dev_link = jawda_get_developer_url($developer);
   }
 
   // Location Breadcrumbs
@@ -210,7 +209,7 @@ function get_my_project_header(){
 						<div class="price-update"><?php get_text('أخر تحديث','Last updated'); echo ' '.jawda_last_updated_date(); ?></div>
 						<!--developer-->
             <?php if ( $dev_name !== NULL ): ?>
-              <div class="project-developer"><?php get_text('المطور العقاري','project developer'); ?><a href=<?php echo $dev_link; ?>><?php echo $dev_name; ?></a> </div>
+              <div class="project-developer"><?php get_text('المطور العقاري','project developer'); ?><a href="<?php echo esc_url($dev_link); ?>"><?php echo esc_html($dev_name); ?></a> </div>
             <?php endif; ?>
 
 					</div>

@@ -43,7 +43,6 @@ $projects->register();
 $project_taxonomies = [
     // ['projects_category', 'Project Category', 'Projects Categories', 'projects-cat'], // REMOVED (Legacy)
     ['projects_tag', 'Project Tag', 'Projects Tags', 'projects_tag'],
-    ['projects_developer', 'Project Developer', 'Projects Developers', 'developer'],
     ['projects_area', 'Project Area', 'Projects Area', 'place'],
     // ['projects_type', 'Project Type', 'Projects Type', 'project-type'], // REMOVED (Legacy)
     ['projects_features', 'Project Features', 'Projects Features', 'project-features'],
@@ -110,10 +109,14 @@ foreach ($property_taxonomies as $taxonomy) {
 add_filter('post_type_link', 'jawda_project_permalink', 10, 2);
 function jawda_project_permalink($post_link, $post) {
     if (is_object($post) && $post->post_type == 'projects') {
-        $terms = wp_get_object_terms($post->ID, 'projects_developer');
-        if ($terms && !is_wp_error($terms)) {
-            // Build the permalink from scratch to ensure the correct structure
-            return home_url(user_trailingslashit($terms[0]->slug . '/' . $post->post_name));
+        $developer = jawda_get_project_developer($post->ID);
+        if (!empty($developer)) {
+            $is_ar = function_exists('jawda_is_arabic_locale') ? jawda_is_arabic_locale() : is_rtl();
+            $slug = jawda_get_developer_slug($developer, $is_ar);
+            if ($slug !== '') {
+                // Build the permalink from scratch to ensure the correct structure
+                return home_url(user_trailingslashit($slug . '/' . $post->post_name));
+            }
         }
     }
     return $post_link;
