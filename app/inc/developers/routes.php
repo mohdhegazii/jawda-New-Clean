@@ -53,8 +53,8 @@ function jawda_developers_pll_translation_url( $url, $lang ) {
         return $url;
     }
 
-    $slug_ar = jawda_developers_get_lang_slug( $developer, 'ar' );
-    $slug_en = jawda_developers_get_lang_slug( $developer, 'en' );
+    $slug_ar = $developer['slug_ar'] ?? '';
+    $slug_en = $developer['slug_en'] ?? ($developer['slug'] ?? '');
     if ( $lang === 'ar' && $slug_ar ) {
         return home_url( '/مشروعات-جديدة/' . rawurlencode( $slug_ar ) . '/' );
     }
@@ -66,59 +66,6 @@ function jawda_developers_pll_translation_url( $url, $lang ) {
     return $url;
 }
 add_filter( 'pll_translation_url', 'jawda_developers_pll_translation_url', 10, 2 );
-
-if ( ! function_exists( 'jawda_developers_get_lang_slug' ) ) {
-    function jawda_developers_get_lang_slug( array $developer, $lang = 'en' ) {
-        $lang = ( 'ar' === $lang ) ? 'ar' : 'en';
-        $slug_key = 'ar' === $lang ? 'slug_ar' : 'slug_en';
-        $name_key = 'ar' === $lang ? 'name_ar' : 'name_en';
-
-        $slug = trim( (string) ( $developer[ $slug_key ] ?? '' ) );
-        $name = trim( (string) ( $developer[ $name_key ] ?? '' ) );
-
-        if ( 'ar' === $lang ) {
-            $slug = jawda_developers_prefers_arabic_value( $slug, $name );
-        } else {
-            $slug = jawda_developers_prefers_english_value( $slug, $name );
-        }
-
-        return jawda_developers_slugify( $slug, $lang );
-    }
-}
-
-if ( ! function_exists( 'jawda_developers_prefers_arabic_value' ) ) {
-    function jawda_developers_prefers_arabic_value( $slug, $name ) {
-        $slug_has_ar = (bool) preg_match( '/[\x{0600}-\x{06FF}]/u', $slug );
-        $name_has_ar = (bool) preg_match( '/[\x{0600}-\x{06FF}]/u', $name );
-
-        if ( $slug && $slug_has_ar ) {
-            return $slug;
-        }
-
-        if ( $name && $name_has_ar ) {
-            return $name;
-        }
-
-        return $slug ?: $name;
-    }
-}
-
-if ( ! function_exists( 'jawda_developers_prefers_english_value' ) ) {
-    function jawda_developers_prefers_english_value( $slug, $name ) {
-        $slug_has_en = (bool) preg_match( '/[A-Za-z0-9]/', $slug );
-        $name_has_en = (bool) preg_match( '/[A-Za-z0-9]/', $name );
-
-        if ( $slug && $slug_has_en ) {
-            return $slug;
-        }
-
-        if ( $name && $name_has_en ) {
-            return $name;
-        }
-
-        return $slug ?: $name;
-    }
-}
 
 if ( ! function_exists( 'jawda_developers_slugify' ) ) {
     function jawda_developers_slugify( $value, $lang = 'en' ) {
