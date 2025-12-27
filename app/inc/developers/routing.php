@@ -18,20 +18,9 @@ add_action('init', function() {
 }, 20);
 
 add_filter('query_vars', function($vars) {
-    $vars[] = 'jawda_dev_slug_en';
-    $vars[] = 'jawda_dev_slug_ar';
+    $vars[] = 'jawda_dev_slug';
     $vars[] = 'jawda_is_developer_page';
     return $vars;
-});
-
-add_action('init', function() {
-    add_rewrite_rule('^en/([^/]+)/?$', 'index.php?jawda_dev_slug_en=$matches[1]', 'top');
-    add_rewrite_rule('^([^/]+)/?$', 'index.php?jawda_dev_slug_ar=$matches[1]', 'bottom');
-
-    if (!get_option('jawda_developers_rewrite_flushed')) {
-        flush_rewrite_rules(false);
-        update_option('jawda_developers_rewrite_flushed', 1);
-    }
 });
 
 add_action('parse_request', function($wp) {
@@ -39,15 +28,15 @@ add_action('parse_request', function($wp) {
         return;
     }
 
-    $slug_en = $wp->query_vars['jawda_dev_slug_en'] ?? null;
-    $slug_ar = $wp->query_vars['jawda_dev_slug_ar'] ?? null;
+    $slug = $wp->query_vars['jawda_dev_slug'] ?? null;
     $service = jawda_developers_service();
     $developer = null;
 
-    if ($slug_en) {
-        $developer = $service->get_developer_by_slug_en($slug_en);
-    } elseif ($slug_ar) {
-        $developer = $service->get_developer_by_slug_ar($slug_ar);
+    if ($slug) {
+        $developer = $service->get_developer_by_slug_ar($slug);
+        if (!$developer) {
+            $developer = $service->get_developer_by_slug_en($slug);
+        }
     }
 
     if ($developer) {

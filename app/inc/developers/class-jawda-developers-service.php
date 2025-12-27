@@ -186,15 +186,17 @@ class Jawda_Developers_Service {
         $slug_en = isset($data['slug_en']) ? sanitize_title($data['slug_en']) : (isset($data['slug']) ? sanitize_title($data['slug']) : ($existing['slug_en'] ?? ''));
         $slug_ar = isset($data['slug_ar']) ? $this->slugify_ar($data['slug_ar']) : ($existing['slug_ar'] ?? '');
 
-        if ('' === $slug_en) {
-            $slug_en = $this->slugify_en($name_en);
-        }
-        if ('' === $slug_ar) {
-            $slug_ar = $this->slugify_ar($name_ar);
+        if ('' === $slug_en || '' === $slug_ar) {
+            return new WP_Error('jawda_developer_missing_slug', __('Developer slugs (EN/AR) are required.', 'jawda'));
         }
 
-        $slug_en = $this->ensure_unique_slug($slug_en, 'slug_en', $existing_id);
-        $slug_ar = $this->ensure_unique_slug($slug_ar, 'slug_ar', $existing_id);
+        if ($this->slug_exists($slug_en, 'slug_en', $existing_id)) {
+            return new WP_Error('jawda_developer_slug_exists', __('English slug already exists.', 'jawda'));
+        }
+
+        if ($this->slug_exists($slug_ar, 'slug_ar', $existing_id)) {
+            return new WP_Error('jawda_developer_slug_exists', __('Arabic slug already exists.', 'jawda'));
+        }
 
         $developer_type_id = isset($data['developer_type_id']) ? (int) $data['developer_type_id'] : ($existing['developer_type_id'] ?? null);
         if (!empty($developer_type_id) && !$this->is_valid_developer_type($developer_type_id)) {
